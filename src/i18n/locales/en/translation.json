@@ -1,0 +1,88 @@
+{
+  "appName": "UniFind",
+  "tabs": {
+    "home": "Home",
+    "programExplorer": "Program Explorer",
+    "growthCenter": "Growth Center",
+    "profile": "Profile"
+  },
+  "home": {
+    "title": "Where Futures Begin",
+    "subtitle": "Discover universities, programs and growth offerings."
+  },
+  "programExplorer": { "title": "Program Explorer" },
+  "growthCenter": { "title": "Growth Center" },
+  "profile": { "title": "Profile", "signIn": "Sign in" },
+  "common": {
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "retry": "Retry",
+    "comingSoon": "Coming soon"
+  },
+
+  "heroSubtitle": "Your journey starts here",
+  "seeAll": "See all",
+  "findYour": "Find Your",
+  "programs": "Programs",
+  "institution": "Institution",
+  "offering": "Offering",
+  "findPrograms": "Find a Program",
+  "findOffering": "Find an Offering",
+  "findSpecialist": "Find a Specialist",
+  "degreeLevel": "Degree Level",
+  "fieldsOfInterest": "Fields of Interest?",
+  "location": "Location",
+  "whatAmILookingFor": "What Am I Looking For?",
+  "searchPlaceholder": "Keyword",
+  "find": "Find",
+
+  "guidesYou": "How UniFind Guides You",
+  "guideProgramTrack": "Program Explorer",
+  "guideGrowthTrack": "Growth Center",
+  "guideStepExploreTitle": "Explore",
+  "guideStepExploreDescription": "Explore thousands of degree programs from universities around Lebanon.",
+  "guideStepCompareTitle": "Compare",
+  "guideStepCompareDescription": "Search and compare programs from top universities, tailored to your preferences and goals.",
+  "guideStepChooseTitle": "Choose",
+  "guideStepChooseDescription": "Filter institutions by location, ranking, tuition fees, and study mode to find your perfect fit.",
+  "guideStepApplyTitle": "Apply",
+  "guideStepApplyDescription": "Save your favorites, connect with specialists, and apply.",
+  "guideStepDiscoverTitle": "Discover",
+  "guideStepDiscoverDescription": "Browse personalized services designed for your academic and career growth.",
+  "guideStepConnectTitle": "Connect",
+  "guideStepConnectDescription": "Find experienced specialists for mentoring, tutoring, or advice tailored to your specific needs.",
+  "guideStepLookIntoTitle": "Look Into",
+  "guideStepLookIntoDescription": "Filter services by category, field of study, academic level, and more to find the perfect match.",
+  "guideStepRequestTitle": "Request",
+  "guideStepRequestDescription": "Request a specialist or an offer based on your preferences.",
+  "btnFindProgram": "Find a Program Now",
+  "btnDiscoverGrowth": "Discover Growth Center",
+
+  "clearSelection": "Clear selection",
+  "rating": "Rating:",
+
+  "discoverOurOfferings": "Discover our Offerings",
+  "unifindByTheNumbers": "Unifind In Numbers",
+  "featuredInstitutions": "Featured Institutions",
+  "studentSay": "What Students Say",
+  "knowMore": "Know More",
+
+  "numbers": {
+    "institutions": "Institutions",
+    "programs": "Programs",
+    "registered_users": "Registered Users",
+    "yearly_visitors": "Yearly Visitors",
+    "social_media_followers": "Social Media Followers",
+    "monthly_social_media_views": "Monthly Social Media Views"
+  },
+
+  "welcome_popup": {
+    "title": "Finally! The 2026 Version is Here!",
+    "arabic_support": "We learned Arabic! (Well, the website did!) - Marhaban ;)",
+    "whish_integration": "New payment option: Whish Money? We got you covered.",
+    "redesigned_interface": "Fresh new look. Better search & smoother experience.",
+    "growth_center": "Level up your skills with our new Growth Center.",
+    "subtitle": "The 2026 version brings big upgrades for your journey.",
+    "explore_now": "Let's Go!"
+  }
+}

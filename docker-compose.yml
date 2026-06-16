@@ -1,0 +1,66 @@
+# =============================================================================
+# unifind-mobile — Development
+#
+# Dedicated port 3010 (3000 unifind-api · 3007/3008/3098 Hatiwal ·
+# 3009/3099/8081 edu are taken — do not reuse them).
+#
+# WEB (Chrome on this machine, works OFFLINE — no WiFi needed):
+#   docker compose up web
+#   → open http://localhost:3010
+#
+# MOBILE (Expo Go on phone — same WiFi as this machine):
+#   HOST_IP=192.168.1.xx docker compose up mobile
+#   → scan the QR with Expo Go
+#   (find your IP: ip route get 1.1.1.1 | grep -oP 'src \K[\d.]+')
+#
+# Backends: the app talks to the unifind Strapi CMS + Node API (default:
+# staging). Override the EXPO_PUBLIC_* URLs below to point at local backends.
+# =============================================================================
+
+x-base: &base
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  volumes:
+    - .:/app
+    - /app/node_modules
+  restart: unless-stopped
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+x-env: &env
+  # Node API (user data) — staging. Strapi CMS (catalog, read-only) is a SEPARATE
+  # host: cms.unifind.online (staging CMS returns 503; prod CMS serves draft data).
+  EXPO_PUBLIC_NODE_API_URL: ${EXPO_PUBLIC_NODE_API_URL:-https://api-stg.unifind-lb.org/api}
+  EXPO_PUBLIC_STRAPI_API_URL: ${EXPO_PUBLIC_STRAPI_API_URL:-https://cms.unifind.online}
+  EXPO_PUBLIC_STRAPI_BEARER: ${EXPO_PUBLIC_STRAPI_BEARER:-}
+  EXPO_PUBLIC_AUTH0_DOMAIN: ${EXPO_PUBLIC_AUTH0_DOMAIN:-dev-gim0725gfieuvjxt.us.auth0.com}
+  EXPO_PUBLIC_AUTH0_CLIENT_ID: ${EXPO_PUBLIC_AUTH0_CLIENT_ID:-lx7YKrGuk3trDoIhNESkkbxqseU7Nbpr}
+  EXPO_PUBLIC_AUTH0_AUDIENCE: ${EXPO_PUBLIC_AUTH0_AUDIENCE:-https://dev-gim0725gfieuvjxt.us.auth0.com/api/v2/}
+  EXPO_PUBLIC_APP_NAME: UniFind
+  EXPO_PUBLIC_DEFAULT_LANG: en
+  EXPO_PUBLIC_DEFAULT_THEME: system
+  EXPO_NO_TELEMETRY: "1"
+  EXPO_NO_DOCTOR: "1"
+
+services:
+  # ── Web (browser, offline) ────────────────────────────────────────────────
+  web:
+    <<: *base
+    environment:
+      <<: *env
+    ports:
+      - "3010:3010"
+    command: ["npx", "expo", "start", "--web", "--port", "3010", "--offline"]
+
+  # ── Mobile (Expo Go on phone — needs HOST_IP set to your LAN IP) ───────────
+  mobile:
+    <<: *base
+    stdin_open: true
+    tty: true
+    environment:
+      <<: *env
+      REACT_NATIVE_PACKAGER_HOSTNAME: ${HOST_IP:-localhost}
+    ports:
+      - "3010:3010"
+    command: ["npx", "expo", "start", "--port", "3010", "--clear"]

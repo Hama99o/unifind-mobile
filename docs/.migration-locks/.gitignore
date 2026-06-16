@@ -1,0 +1,4 @@
+# Atomic migration claim locks — runtime only, never committed.
+# Each <slug>.lock is an mkdir'd directory acting as a mutex (see MIGRATION_QUEUE.md).
+*
+!.gitignore

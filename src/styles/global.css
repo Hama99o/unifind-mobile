@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * unifind semantic theme tokens. Brand: prussian (primary), turquoise
+ * (secondary/accent), barc (warning/highlight). Values are HSL channels so
+ * Tailwind's `hsl(var(--x))` works in both light and dark mode.
+ */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 205 96% 11%;        /* prussian-ish */
+    --card: 0 0% 100%;
+    --card-foreground: 205 96% 11%;
+    --muted: 210 16% 95%;
+    --muted-foreground: 215 14% 45%;
+    --border: 214 20% 88%;
+    --primary: 205 96% 17%;           /* #023055 prussian */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 174 71% 57%;         /* #44DED1 turquoise */
+    --secondary-foreground: 205 96% 11%;
+    --accent: 27 86% 60%;             /* #F29049 barc */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+  }
+
+  .dark:root,
+  .dark {
+    --background: 205 50% 8%;
+    --foreground: 0 0% 98%;
+    --card: 205 40% 12%;
+    --card-foreground: 0 0% 98%;
+    --muted: 205 30% 18%;
+    --muted-foreground: 210 14% 70%;
+    --border: 205 30% 22%;
+    --primary: 174 71% 57%;           /* turquoise reads better on dark */
+    --primary-foreground: 205 96% 11%;
+    --secondary: 205 60% 30%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 27 86% 60%;
+    --accent-foreground: 205 96% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+  }
+}

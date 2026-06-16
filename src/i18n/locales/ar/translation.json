@@ -1,0 +1,88 @@
+{
+  "appName": "يونيفايند",
+  "tabs": {
+    "home": "الرئيسية",
+    "programExplorer": "استكشاف البرامج",
+    "growthCenter": "مركز النمو",
+    "profile": "الملف الشخصي"
+  },
+  "home": {
+    "title": "حيث يبدأ المستقبل",
+    "subtitle": "اكتشف الجامعات والبرامج وعروض التطوير."
+  },
+  "programExplorer": { "title": "استكشاف البرامج" },
+  "growthCenter": { "title": "مركز النمو" },
+  "profile": { "title": "الملف الشخصي", "signIn": "تسجيل الدخول" },
+  "common": {
+    "loading": "جارٍ التحميل…",
+    "empty": "لا يوجد شيء بعد",
+    "retry": "إعادة المحاولة",
+    "comingSoon": "قريباً"
+  },
+
+  "heroSubtitle": "رحلتك تبدأ هنا",
+  "seeAll": "عرض الكل",
+  "findYour": "ابحث عن",
+  "programs": "البرامج",
+  "institution": "المؤسسة التعليمية",
+  "offering": "الخدمات",
+  "findPrograms": "ابحث عن برنامجك",
+  "findOffering": "ابحث عن خدمة",
+  "findSpecialist": "ابحث عن متخصص",
+  "degreeLevel": "مستوى الشهادة",
+  "fieldsOfInterest": "مجالات الاهتمام",
+  "location": "الموقع",
+  "whatAmILookingFor": "عن ماذا أبحث؟",
+  "searchPlaceholder": "بحث",
+  "find": "ابحث",
+
+  "guidesYou": "كيف نرشدك",
+  "guideProgramTrack": "استكشاف البرامج",
+  "guideGrowthTrack": "مركز النمو",
+  "guideStepExploreTitle": "استكشف",
+  "guideStepExploreDescription": "استكشف آلاف البرامج الدراسية من جامعات في لبنان.",
+  "guideStepCompareTitle": "قارن",
+  "guideStepCompareDescription": "ابحث وقارن البرامج من أفضل الجامعات حسب تفضيلاتك وأهدافك.",
+  "guideStepChooseTitle": "اختر",
+  "guideStepChooseDescription": "قم بفرز المؤسسات حسب الموقع، التصنيف، الرسوم الدراسية، ونمط الدراسة للعثور على الأنسب.",
+  "guideStepApplyTitle": "قدّم",
+  "guideStepApplyDescription": "احفظ المفضلات، تواصل مع المتخصصين، وقدّم طلبك.",
+  "guideStepDiscoverTitle": "ابحث",
+  "guideStepDiscoverDescription": "تصفح الخدمات الشخصية المصممة لنموك الأكاديمي والمهني.",
+  "guideStepConnectTitle": "تواصل",
+  "guideStepConnectDescription": "ابحث عن متخصصين ذوي خبرة للإرشاد أو الدعم الأكاديمي حسب احتياجك.",
+  "guideStepLookIntoTitle": "تعمّق",
+  "guideStepLookIntoDescription": "صنّف الخدمات حسب الفئة، المجال الدراسي، المستوى الأكاديمي، والمزيد.",
+  "guideStepRequestTitle": "اطلب",
+  "guideStepRequestDescription": "احجز متخصصًا أو عرضًا يناسب تفضيلاتك.",
+  "btnFindProgram": "ابحث عن برنامج الآن",
+  "btnDiscoverGrowth": "اكتشف مركز تطوير المهارات",
+
+  "clearSelection": "مسح التحديد",
+  "rating": "التقييم:",
+
+  "discoverOurOfferings": "اكتشف خدماتنا",
+  "unifindByTheNumbers": "يونيفايند بالأرقام",
+  "featuredInstitutions": "المؤسسات التعليمية المميزة",
+  "studentSay": "آراء الطلاب",
+  "knowMore": "اعرف المزيد",
+
+  "numbers": {
+    "institutions": "المؤسسات التعليمية",
+    "programs": "البرامج",
+    "registered_users": "المستخدمون المسجلون",
+    "yearly_visitors": "الزوار السنويون",
+    "social_media_followers": "متابعو وسائل التواصل الاجتماعي",
+    "monthly_social_media_views": "مشاهدات وسائل التواصل الاجتماعي الشهرية"
+  },
+
+  "welcome_popup": {
+    "title": "وأخيراً! نسخة ٢٠٢٦ وصلت!",
+    "arabic_support": "صرنا نحكي عربي! (الموقع يعني مش نحنا) - مرحباً ؛)",
+    "whish_integration": "طريقة دفع جديدة: Whish Money.",
+    "redesigned_interface": "شكل جديد، نفس الروح الحلوة! بحث أسهل وتجربة أروع.",
+    "growth_center": "طور مهاراتك مع مركز تطوير المهارات الجديد.",
+    "subtitle": "نسخة ٢٠٢٦ تأتي بتحسينات كبيرة لرحلتك التعليمية.",
+    "explore_now": "ابدأ!"
+  }
+}
