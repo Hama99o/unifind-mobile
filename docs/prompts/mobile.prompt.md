@@ -144,7 +144,22 @@ Separate **transport** from **orchestration** (full detail in `AUTH_SECURITY.md`
 
 - NativeWind theme tokens only. Brand: turquoise `#44DED1`, prussian `#023055`, barc `#F29049` — defined as theme tokens in the NativeWind/Gluestack config, **never** inlined as hex in components.
 - Code that must use inline styles → `useColors()` from `@/hooks/useColors`.
-- Verify **light and dark** mode on every screen.
+- **LIGHT MODE ONLY — no dark mode.** The unifind **web** app has no dark mode (no `darkMode` in its Tailwind config, no theme toggle), so mobile mirrors it: the app is locked to light (`userInterfaceStyle: "light"` in `app.json`, and `useColors()` always returns the light palette). Do **not** add dark-mode styling, theme toggles, or `dark:` variants. The `darkColors` map / `.dark` CSS block are intentionally unused (kept only so tokens resolve). Because there's exactly one background (white surfaces / prussian bands), every text/icon must be a **dark** color on light surfaces and a **light** color on the prussian bands — pick the token that contrasts the surface it sits on.
+
+### §7.1 — Color clarity (NON-NEGOTIABLE — text/icons must be clearly noticeable)
+
+The #1 design complaint is washed-out, hard-to-read text and "invisible" icons. Every color choice must pass these:
+
+- **Only real tokens exist.** Use the semantic set from `tailwind.config.js`/`global.css`: `text-foreground` / `text-card-foreground` (primary text), `text-muted-foreground` (secondary/metadata — the ONLY soft text token), `bg-background`, `bg-card`, `border-border`, `bg-primary`/`text-primary-foreground`, `bg-secondary`, `bg-accent`/`text-accent-foreground`, `bg-destructive`. **There is NO `text-typography-*` scale** — those classes resolve to nothing and render colorless text. Never use them.
+- **Never same-hue-on-same-hue.** A turquoise icon on a `turquoise/NN` chip, prussian on prussian, grey text on a grey track — all invisible. Put a brand-colored icon on a *neutral or contrasting* surface (e.g. turquoise icon on `bg-white/10` over prussian; prussian icon on the `lightgreen` `#D9F8F5` chip on white). The pale-mint chip token is `bg-lightgreen` — use it instead of `bg-turquoise/12`.
+- **Don't lighten text to "soften" it.** Faint opacities (`text-white/65`, `/12` tints) read as broken. Floor for readable text on a dark band is `text-white/85`; for an icon `/10` fill keep the icon itself solid. Prefer a real token (`text-muted-foreground`) over an opacity hack.
+- **On the active `primary` fill use `text-primary-foreground` / `colors.primaryForeground`**, never literal `text-white` — primary is prussian in light but turquoise in dark, so `text-white` becomes unreadable in dark mode.
+- **Squint test, both themes.** If you can't immediately read a label or spot an icon at arm's length in light AND dark, the contrast is wrong — fix the token, don't ship it.
+
+### §7.2 — Loading states & skeletons (REQUIRED on every screen)
+
+- **Every screen and async section must show a skeleton while loading** — never a blank screen, a bare spinner, or a layout that pops in. Use a skeleton whose shape matches the real content (list rows, cards, hero) so nothing shifts when data arrives. `SectionSkeleton` is the pattern for carousels; build matching skeletons for hero/stat/detail layouts.
+- A screen is not done until **loading (skeleton) + empty (icon + title + one line + action) + error (message + retry)** are all designed and wired. This is part of the Completion Contract — see `MIGRATE_FEATURE.md`.
 
 ---
 
@@ -169,11 +184,16 @@ See `COMPARE_FAVORITES.md`. In short:
 ❌ Hand-roll a primitive Gluestack provides
 ❌ FlatList for a feature list — use UniversalList
 ❌ Hardcode hex — theme tokens / useColors()
+❌ Use text-typography-* — NOT a real token (renders colorless); use text-foreground / text-muted-foreground
+❌ Same-hue-on-same-hue (turquoise icon on turquoise chip, grey on grey) — invisible; contrast it
+❌ Faint text to "soften" (text-white/65, /12 tints) — washed out; floor /85, prefer real tokens
+❌ Literal text-white on a primary fill — use text-primary-foreground (breaks in dark mode)
 ❌ Hardcode strings — t('...') in en AND ar
 ❌ Raw dates/numbers/currency — useLocalization()
 ❌ Confuse Strapi (http) with Node (nodeApi)
 ❌ Token in AsyncStorage — use expo-secure-store
-❌ Skip empty/loading/error states
-❌ Raw Alert.alert — use confirmAlert
+❌ Skip skeleton/empty/error states — skeleton REQUIRED on every screen (no blank/spinner-only)
+❌ Dead/no-op onPress — every control that is clickable on web must respond here: navigate if the target route exists, else `showToast(\`${name} · ${t("common.comingSoon")}\`)` (global toast in `@/stores/toastStore`). Never leave a TODO no-op tap.
+❌ Raw Alert.alert — use confirmAlert (use the global toast for transient "coming soon"/info feedback)
 ❌ Business logic in app/ route files — put it in src/screens/
 ```

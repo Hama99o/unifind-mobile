@@ -83,8 +83,8 @@ function GuideStepRow({ step, index }: { step: GuideStep; index: number }) {
       {/* Step number dot + icon chip stacked */}
       <View className="items-center gap-1 flex-shrink-0" style={{ marginTop: 2 }}>
         {/* Step number */}
-        <View className="w-5 h-5 rounded-full bg-turquoise/20 items-center justify-center">
-          <Text className="text-turquoise text-[9px] font-black leading-none">{index + 1}</Text>
+        <View className="w-5 h-5 rounded-full bg-lightgreen items-center justify-center">
+          <Text className="text-primary text-[9px] font-black leading-none">{index + 1}</Text>
         </View>
         {/* Connecting line — hidden for last item */}
         {index < 3 ? (
@@ -95,8 +95,8 @@ function GuideStepRow({ step, index }: { step: GuideStep; index: number }) {
       <View
         className={`flex-row items-start gap-2.5 flex-1 min-w-0 pb-3 ${isRtl ? "flex-row-reverse" : ""}`}
       >
-        <View className="w-8 h-8 rounded-xl bg-turquoise/12 items-center justify-center flex-shrink-0">
-          <Icon size={15} color={colors.secondary} />
+        <View className="w-8 h-8 rounded-xl bg-lightgreen items-center justify-center flex-shrink-0">
+          <Icon size={15} color={colors.primary} />
         </View>
         {/* flex-1 + min-w-0 lets the text column shrink and wrap fully */}
         <View className="flex-1 min-w-0">

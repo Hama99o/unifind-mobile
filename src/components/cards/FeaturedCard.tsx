@@ -32,6 +32,7 @@ import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
+import { brand } from "@/config/theme";
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 /** Total card width — matches FeaturedOfferingsSection / FeaturedInstitutionsSection CARD_WIDTH */
@@ -131,7 +132,7 @@ export function FeaturedCard({
 
           {/* Subtle bottom scrim — improves contrast if badge or logo overlaps */}
           <GradientView
-            colors={["transparent", "rgba(2,48,85,0.55)"]}
+            colors={["transparent", `${brand.prussian}8C`]}
             locations={[0.5, 1]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
@@ -171,7 +172,7 @@ export function FeaturedCard({
             <Heading
               size="sm"
               numberOfLines={2}
-              className={`text-typography-900 font-bold leading-snug ${isRtl ? "text-right" : ""}`}
+              className={`text-card-foreground font-bold leading-snug ${isRtl ? "text-right" : ""}`}
             >
               {title}
             </Heading>
@@ -183,7 +184,7 @@ export function FeaturedCard({
             <View style={{ height: CHIP_H, justifyContent: "center" }}>
               {categoryLabel ? (
                 <View
-                  className={`flex-row items-center gap-1.5 self-start bg-turquoise/12 rounded-full px-2.5 py-1 ${isRtl ? "flex-row-reverse self-end" : ""}`}
+                  className={`flex-row items-center gap-1.5 self-start bg-lightgreen rounded-full px-2.5 py-1 ${isRtl ? "flex-row-reverse self-end" : ""}`}
                 >
                   <CategoryIcon size={11} color={colors.primary} />
                   <Text className="text-xs text-primary font-semibold uppercase tracking-wide">
@@ -196,7 +197,7 @@ export function FeaturedCard({
             {/* Description: fixed 36px, 2 lines max */}
             <View style={{ height: DESC_H }}>
               <Text
-                className={`text-xs text-typography-500 leading-relaxed ${isRtl ? "text-right" : ""}`}
+                className={`text-xs text-muted-foreground leading-relaxed ${isRtl ? "text-right" : ""}`}
                 numberOfLines={2}
               >
                 {description}
@@ -206,7 +207,7 @@ export function FeaturedCard({
             {/* subLine — optional single muted line (location etc.) */}
             {subLine ? (
               <Text
-                className={`text-xs text-typography-500 ${isRtl ? "text-right" : ""}`}
+                className={`text-xs text-muted-foreground ${isRtl ? "text-right" : ""}`}
                 numberOfLines={1}
               >
                 {subLine}

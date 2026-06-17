@@ -114,7 +114,7 @@ export function WelcomeModal() {
             style={{ paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24, alignItems: "center", position: "relative", overflow: "hidden" }}
           >
             {/* Glow sphere */}
-            <View style={{ position: "absolute", top: -30, right: -20, width: 120, height: 120, borderRadius: 60, backgroundColor: "rgba(68,222,209,0.12)" }} />
+            <View style={{ position: "absolute", top: -30, right: -20, width: 120, height: 120, borderRadius: 60, backgroundColor: `${brand.turquoise}1F` }} />
 
             {/* Icon */}
             <View className="w-16 h-16 rounded-2xl bg-turquoise/20 items-center justify-center mb-4">

@@ -171,7 +171,7 @@ export function FindBarFilters({
         <>
           <Input className="rounded-xl border-border" style={{ height: 52 }}>
             <InputSlot className="pl-3">
-              <Search size={16} color={colors.muted} />
+              <Search size={16} color={colors.foreground} />
             </InputSlot>
             <InputField
               placeholder={t("searchPlaceholder")}

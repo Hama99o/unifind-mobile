@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "@/stores/authStore";
+import { ToastHost } from "@/components/shared/ToastHost";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(main)" />
           </Stack>
+          <ToastHost />
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -26,6 +26,7 @@ import { Heading } from "@/components/ui/heading";
 import { RatingStars } from "@/components/cards/RatingStars";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
+import { brand } from "@/config/theme";
 
 export interface TestimonialCardProps {
   imageUrl: string;
@@ -78,7 +79,7 @@ export function TestimonialCard({
             <View className="w-full h-full bg-muted" />
           )}
           <GradientView
-            colors={["transparent", "rgba(2,48,85,0.7)"]}
+            colors={["transparent", `${brand.prussian}B3`]}
             locations={[0.3, 1]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}

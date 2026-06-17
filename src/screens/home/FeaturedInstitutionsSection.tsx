@@ -27,6 +27,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { extractPlainText, fetchFeaturedInstitutions, type FeaturedInstitution } from "@/api/catalog";
 import { SectionSkeleton } from "@/screens/home/SectionSkeleton";
+import { showToast } from "@/stores/toastStore";
 
 const CARD_WIDTH = 280;
 const CARD_GAP = 12;
@@ -93,7 +94,9 @@ export function FeaturedInstitutionsSection() {
                 }
                 badge={t("institution")}
                 onPress={() => {
+                  // Detail screen not built yet — give clear feedback so the tap responds.
                   // TODO: router.push(`/(main)/program-explorer/institutions/${inst.slug}`)
+                  showToast(`${inst.name} · ${t("common.comingSoon")}`);
                 }}
               />
             ))}

@@ -106,7 +106,7 @@ export function SelectField({
         >
           <View className={`flex-row items-center gap-2 flex-1 ${isRtl ? "flex-row-reverse" : ""}`}>
             {LeadingIcon ? (
-              <LeadingIcon size={16} color={colors.muted} />
+              <LeadingIcon size={16} color={colors.foreground} />
             ) : null}
             <Text
               className={`flex-1 text-sm ${selected ? "text-foreground" : "text-muted-foreground"}`}

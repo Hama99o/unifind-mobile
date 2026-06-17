@@ -24,6 +24,7 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { fetchTestimonials, type TestimonialItem } from "@/services/testimonialsService";
 import { SectionSkeleton } from "@/screens/home/SectionSkeleton";
+import { showToast } from "@/stores/toastStore";
 
 const CARD_WIDTH = 288;
 const CARD_GAP = 12;
@@ -80,7 +81,9 @@ export function TestimonialsSection() {
               userAvatar={item.userAvatar}
               userProgram={item.userProgram}
               onPress={() => {
+                // Detail screen not built yet — give clear feedback so the tap responds.
                 // TODO: navigate when detail screens are built
+                showToast(`${item.title} · ${t("common.comingSoon")}`);
               }}
             />
           ))}

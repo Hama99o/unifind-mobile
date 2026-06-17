@@ -31,17 +31,17 @@ export function StatTile({ Icon, value, labelKey }: StatTileProps) {
     >
       {/* Icon chip — compact 32px */}
       <View
-        className="rounded-xl bg-turquoise/20 items-center justify-center"
+        className="rounded-xl bg-white/10 items-center justify-center"
         style={{ width: 32, height: 32 }}
       >
-        <Icon size={16} color={colors.secondary} />
+        <Icon size={16} color={colors.secondary} strokeWidth={2.25} />
       </View>
       {/* Value — turquoise, prominent */}
       <Text className="text-turquoise text-2xl font-black leading-none" numberOfLines={1}>
         {value}
       </Text>
-      {/* Label — muted white, centered */}
-      <Text className="text-xs text-white/65 text-center leading-tight font-medium" numberOfLines={2}>
+      {/* Label — white, centered, legible */}
+      <Text className="text-xs text-white/90 text-center leading-tight font-medium" numberOfLines={2}>
         {t(labelKey)}
       </Text>
     </View>

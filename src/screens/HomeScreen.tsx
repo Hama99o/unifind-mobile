@@ -19,6 +19,7 @@ import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 
 import { FindBarSection } from "@/screens/home/FindBarSection";
 import { GuideSection } from "@/screens/home/GuideSection";
@@ -27,10 +28,37 @@ import { NumbersSection } from "@/screens/home/NumbersSection";
 import { FeaturedInstitutionsSection } from "@/screens/home/FeaturedInstitutionsSection";
 import { TestimonialsSection } from "@/screens/home/TestimonialsSection";
 import { WelcomeModal } from "@/screens/home/WelcomeModal";
+import { HomeSkeleton } from "@/screens/home/HomeSkeleton";
+import { fetchFeaturedOfferings, fetchFeaturedInstitutions } from "@/api/catalog";
+import { fetchTestimonials } from "@/services/testimonialsService";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { i18n } = useTranslation();
+  const locale = i18n.language === "ar" ? "ar" : "en";
+
+  // Observe the home's async data here (same query keys/fns as the sections, so
+  // react-query shares one cache — no duplicate network calls). We render ONE
+  // full-page skeleton until all of it has loaded, so the page never appears
+  // partially. Once loaded, each section reads its data from cache and renders
+  // immediately (its own per-section skeleton never triggers).
+  const offerings = useQuery({
+    queryKey: ["featuredOfferings", locale],
+    queryFn: () => fetchFeaturedOfferings(locale),
+    staleTime: 5 * 60 * 1000,
+  });
+  const institutions = useQuery({
+    queryKey: ["featuredInstitutions", locale],
+    queryFn: () => fetchFeaturedInstitutions(locale),
+    staleTime: 5 * 60 * 1000,
+  });
+  const testimonials = useQuery({
+    queryKey: ["testimonials", locale],
+    queryFn: () => fetchTestimonials(locale),
+    staleTime: 5 * 60 * 1000,
+  });
+  const isHomeLoading =
+    offerings.isLoading || institutions.isLoading || testimonials.isLoading;
 
   const handleFindProgram = () => {
     router.push("/(main)/(tabs)/program-explorer");
@@ -48,6 +76,9 @@ export default function HomeScreen() {
   const handleProfilePress = () => {
     router.push("/(main)/(tabs)/profile");
   };
+
+  // One cohesive skeleton for the whole page while data loads.
+  if (isHomeLoading) return <HomeSkeleton />;
 
   return (
     // edges={[]} — hero gradient covers the full status-bar area intentionally

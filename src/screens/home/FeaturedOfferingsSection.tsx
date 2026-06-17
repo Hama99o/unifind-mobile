@@ -27,6 +27,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { extractPlainText, fetchFeaturedOfferings, type FeaturedOffering } from "@/api/catalog";
 import { SectionSkeleton } from "@/screens/home/SectionSkeleton";
+import { showToast } from "@/stores/toastStore";
 
 const CARD_WIDTH = 280;
 const CARD_GAP = 12;
@@ -90,7 +91,9 @@ export function FeaturedOfferingsSection() {
                 description={extractPlainText(offering.description)}
                 badge={t("offering")}
                 onPress={() => {
+                  // Detail screen not built yet — give clear feedback so the tap responds.
                   // TODO: router.push(`/(main)/growth-center/offerings/${offering.slug}`)
+                  showToast(`${offering.title} · ${t("common.comingSoon")}`);
                 }}
               />
             ))}

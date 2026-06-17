@@ -148,7 +148,7 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
       <Animated.View style={heroStyle} className="px-5 pt-4 pb-8">
         {/* Headline — balanced vertical spacing */}
         <View className={`gap-1 mb-6 ${isRtl ? "items-end" : "items-start"}`}>
-          <Text className={`text-white/75 text-sm font-medium tracking-wide ${isRtl ? "text-right" : ""}`}>
+          <Text className={`text-white/85 text-sm font-medium tracking-wide ${isRtl ? "text-right" : ""}`}>
             {t("heroSubtitle")}
           </Text>
           <View className={`flex-row flex-wrap items-baseline gap-x-2 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -164,7 +164,7 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
         >
           {/* Segmented control */}
           <View
-            className="bg-muted/60 mx-4 mt-4 rounded-2xl overflow-hidden relative"
+            className="bg-muted border border-border mx-4 mt-4 rounded-2xl overflow-hidden relative"
             onLayout={onSegmentLayout}
           >
             <Animated.View
@@ -186,9 +186,9 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
                     accessibilityState={{ selected: isActive }}
                     className="flex-1 flex-row items-center justify-center gap-1.5 py-3 px-1 min-h-[44px] z-10"
                   >
-                    <Icon size={13} color={isActive ? colors.onOverlay : colors.muted} />
+                    <Icon size={13} color={isActive ? colors.primaryForeground : colors.foreground} strokeWidth={isActive ? 2.5 : 2.25} />
                     <Text
-                      className={`text-xs font-semibold ${isActive ? "text-white" : "text-muted-foreground"}`}
+                      className={`text-xs font-semibold ${isActive ? "text-primary-foreground" : "text-foreground"}`}
                       numberOfLines={1}
                     >
                       {label}

@@ -15,6 +15,8 @@ export interface AppColors {
   muted: string;
   border: string;
   primary: string;
+  /** Text/icon color that sits ON the primary fill (e.g. active segmented tab). */
+  primaryForeground: string;
   secondary: string;
   accent: string;
   destructive: string;
@@ -32,6 +34,7 @@ export const lightColors: AppColors = {
   muted: "#6B7785",
   border: "#DCE3EB",
   primary: brand.prussian,
+  primaryForeground: "#ffffff",
   secondary: brand.turquoise,
   accent: brand.barc,
   destructive: "#DC2626",
@@ -44,6 +47,7 @@ export const darkColors: AppColors = {
   muted: "#9AA8B5",
   border: "#243240",
   primary: brand.turquoise,
+  primaryForeground: brand.prussian,
   secondary: "#1E4A66",
   accent: brand.barc,
   destructive: "#DC2626",
