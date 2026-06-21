@@ -34,7 +34,7 @@ const CARD_GAP = 12;
 const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
 
 export function FeaturedOfferingsSection() {
-  const { t, lang } = useCustomTranslation();
+  const { t, lang, isRtl } = useCustomTranslation();
   const colors = useColors();
   const locale = lang === "ar" ? "ar" : "en";
   const router = useRouter();
@@ -79,7 +79,7 @@ export function FeaturedOfferingsSection() {
             snapToInterval={SNAP_INTERVAL}
             decelerationRate="fast"
             snapToAlignment="start"
-            contentContainerStyle={{ paddingLeft: 16, paddingRight: 32 }}
+            contentContainerStyle={isRtl ? { paddingRight: 16, paddingLeft: 32 } : { paddingLeft: 16, paddingRight: 32 }}
           >
             {offerings.map((offering: FeaturedOffering) => (
               <FeaturedCard
@@ -91,9 +91,11 @@ export function FeaturedOfferingsSection() {
                 description={extractPlainText(offering.description)}
                 badge={t("offering")}
                 onPress={() => {
-                  // Detail screen not built yet — give clear feedback so the tap responds.
-                  // TODO: router.push(`/(main)/growth-center/offerings/${offering.slug}`)
-                  showToast(`${offering.title} · ${t("common.comingSoon")}`);
+                  if (offering.slug) {
+                    router.push(`/(main)/offerings/${offering.slug}` as never);
+                  } else {
+                    showToast(`${offering.title} · ${t("common.comingSoon")}`);
+                  }
                 }}
               />
             ))}

@@ -17,11 +17,8 @@
 
 import { View, Image } from "react-native";
 import { Pressable } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
+import { usePressScale } from "@/hooks/usePressScale";
 import { GradientView } from "@/components/shared/GradientView";
 import {
   Tag, Sparkles, BookOpen, Briefcase, GraduationCap, Mic,
@@ -32,7 +29,7 @@ import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
-import { brand } from "@/config/theme";
+import { brand, SHADOW_COLOR } from "@/config/theme";
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 /** Total card width — matches FeaturedOfferingsSection / FeaturedInstitutionsSection CARD_WIDTH */
@@ -92,10 +89,7 @@ export function FeaturedCard({
   const CategoryIcon = resolveCategoryIcon(categoryIcon);
   const ArrowIcon = isRtl ? ChevronLeft : ChevronRight;
 
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const handlePressIn = () => { scale.value = withTiming(0.97, { duration: 100 }); };
-  const handlePressOut = () => { scale.value = withTiming(1, { duration: 150 }); };
+  const { animStyle, handlePressIn, handlePressOut } = usePressScale();
 
   return (
     <Animated.View
@@ -103,7 +97,7 @@ export function FeaturedCard({
         width: CARD_W,
         marginRight: isRtl ? 0 : 12,
         marginLeft: isRtl ? 12 : 0,
-        shadowColor: "#000",
+        shadowColor: SHADOW_COLOR,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.14,
         shadowRadius: 12,
@@ -143,7 +137,7 @@ export function FeaturedCard({
           <View
             className={`absolute top-3 ${isRtl ? "left-3" : "right-3"} bg-accent rounded-full px-2.5 py-0.5`}
           >
-            <Text className="text-white text-[10px] font-bold">{badge}</Text>
+            <Text className="text-accent-foreground text-xs font-bold">{badge}</Text>
           </View>
 
           {/* Logo (institution cards) — top leading corner, white pill */}

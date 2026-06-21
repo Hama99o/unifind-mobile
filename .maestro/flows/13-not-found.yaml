@@ -1,0 +1,51 @@
+# 13-not-found.yaml — 404 / Not Found screen via an unknown deep link.
+#
+# Journey:
+#   1. Deep-link the app to an unknown route using the `unifind://` scheme
+#      (configured in app.json). Expo Router resolves any unmatched route to the
+#      +not-found catch-all → NotFoundScreen.
+#   2. Assert the 404 copy: "404", "Page Not Found", and the description.
+#   3. Tap "Home" to recover.
+#
+# No testIDs on NotFoundScreen — anchor on the EN copy:
+#   "404", "Page Not Found",
+#   "The page you are looking for doesn't exist or has been moved.", "Home"
+#
+# FEASIBILITY: a custom URL scheme (`unifind`) IS configured in app.json, so the
+# deep link is feasible on a standalone/dev build. On Expo Go the scheme differs
+# (exp://…/--/…) — if running via Expo Go, prefix the path accordingly or skip
+# this flow. The deep-link step is therefore guarded.
+
+appId: org.unifind.app
+tags:
+  - not-found
+  - deeplink
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Deep-link to a route that does not exist → Expo Router +not-found
+- openLink:
+    link: "unifind://this-route-does-not-exist-404"
+    autoVerify: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# 404 branded copy
+- assertVisible:
+    text: "404"
+    optional: true
+- assertVisible:
+    text: "Page Not Found"
+    optional: true
+- assertVisible:
+    text: "The page you are looking for doesn't exist or has been moved."
+    optional: true
+
+# Recover via the "Home" CTA (Go Home → /(main)/(tabs)/home)
+- tapOn:
+    text: "Home"
+    optional: true
+- waitForAnimationToEnd

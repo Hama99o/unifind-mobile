@@ -17,7 +17,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { View, Pressable, LayoutChangeEvent } from "react-native";
+import { View, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, {
   useSharedValue,
@@ -35,9 +35,7 @@ import { HomeAppBar } from "@/components/shared/HomeAppBar";
 import { FindBarFilters, type ActiveTab, type ProgramValues, type InstitutionValues, type OfferingValues } from "@/screens/home/FindBarFilters";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
-import { brand } from "@/config/theme";
-
-const SEGMENT_COUNT = 3;
+import { brand, SHADOW_COLOR } from "@/config/theme";
 
 interface FindBarSectionProps {
   onLanguageToggle?: () => void;
@@ -53,20 +51,12 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
   const [programValues, setProgramValues] = useState<ProgramValues>({ level: "", field: "", location: "" });
   const [institutionValues, setInstitutionValues] = useState<InstitutionValues>({ level: "", field: "", location: "" });
   const [offeringValues, setOfferingValues] = useState<OfferingValues>({ search: "", field: "", category: "" });
-  const [segmentWidth, setSegmentWidth] = useState(0);
-
-  const indicatorX = useSharedValue(0);
-  const tabIndex: Record<ActiveTab, number> = { program: 0, institution: 1, offering: 2 };
-
   // Hero entrance animation
   const heroOpacity = useSharedValue(0);
   const heroTranslate = useSharedValue(20);
   const heroStyle = useAnimatedStyle(() => ({
     opacity: heroOpacity.value,
     transform: [{ translateY: heroTranslate.value }],
-  }));
-  const indicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: indicatorX.value }],
   }));
 
   useEffect(() => {
@@ -76,37 +66,32 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
 
   const handleTabChange = (tab: ActiveTab) => {
     setActiveTab(tab);
-    const idx = tabIndex[tab];
-    const target = isRtl ? (SEGMENT_COUNT - 1 - idx) * segmentWidth : idx * segmentWidth;
-    indicatorX.value = withSpring(target, { damping: 22, stiffness: 260 });
-  };
-
-  const onSegmentLayout = (e: LayoutChangeEvent) => {
-    const w = e.nativeEvent.layout.width / SEGMENT_COUNT;
-    setSegmentWidth(w);
-    const idx = tabIndex[activeTab];
-    indicatorX.value = isRtl ? (SEGMENT_COUNT - 1 - idx) * w : idx * w;
   };
 
   const handleFind = () => {
     if (activeTab === "program") {
+      // Programs → FindScreen with sub-tab=programs + optional filters
       const p = new URLSearchParams();
+      p.set("find", "programs");
       if (programValues.level) p.set("level", programValues.level);
       if (programValues.field) p.set("field", programValues.field);
       if (programValues.location) p.set("location", programValues.location);
-      router.push(`/(main)/(tabs)/program-explorer?${p.toString()}`);
+      router.push(`/(main)/find?${p.toString()}` as never);
     } else if (activeTab === "institution") {
+      // Institutions → FindScreen with sub-tab=institutions + optional filters
       const p = new URLSearchParams();
+      p.set("find", "institutions");
       if (institutionValues.level) p.set("level", institutionValues.level);
       if (institutionValues.field) p.set("field", institutionValues.field);
       if (institutionValues.location) p.set("location", institutionValues.location);
-      router.push(`/(main)/(tabs)/program-explorer?${p.toString()}`);
+      router.push(`/(main)/find?${p.toString()}` as never);
     } else {
+      // Offerings → Growth Center hub
       const p = new URLSearchParams();
       if (offeringValues.search) p.set("search", offeringValues.search);
       if (offeringValues.field) p.set("field", offeringValues.field);
       if (offeringValues.category) p.set("category", offeringValues.category);
-      router.push(`/(main)/(tabs)/growth-center?${p.toString()}`);
+      router.push(`/(main)/(tabs)/growth-center?${p.toString()}` as never);
     }
   };
 
@@ -160,47 +145,51 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
         {/* Floating search card — consistent horizontal margin (px-5 matches hero) */}
         <View
           className="bg-card rounded-3xl overflow-hidden"
-          style={{ shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 20, elevation: 12 }}
+          style={{ shadowColor: SHADOW_COLOR, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 20, elevation: 12 }}
         >
-          {/* Segmented control */}
+          {/* Segmented control — the active segment gets a solid dark pill via an
+              inline backgroundColor (reliable on native). The previous version
+              painted a separately-positioned animated indicator behind white text;
+              when that indicator didn't lay out on native you got white text on the
+              light track (invisible). Inline per-segment background avoids that. */}
           <View
-            className="bg-muted border border-border mx-4 mt-4 rounded-2xl overflow-hidden relative"
-            onLayout={onSegmentLayout}
+            className={`bg-muted border border-border mx-4 mt-4 rounded-2xl p-1 flex-row ${isRtl ? "flex-row-reverse" : ""}`}
           >
-            <Animated.View
-              style={[indicatorStyle, {
-                position: "absolute", top: 3, bottom: 3,
-                width: segmentWidth > 0 ? segmentWidth - 6 : 0,
-                left: 3, borderRadius: 14,
-                backgroundColor: colors.primary,
-              }]}
-            />
-            <View className={`flex-row ${isRtl ? "flex-row-reverse" : ""}`}>
-              {displayTabs.map(({ key, label, Icon }) => {
-                const isActive = activeTab === key;
-                return (
-                  <Pressable
-                    key={key}
-                    onPress={() => handleTabChange(key)}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: isActive }}
-                    className="flex-1 flex-row items-center justify-center gap-1.5 py-3 px-1 min-h-[44px] z-10"
+            {displayTabs.map(({ key, label, Icon }) => {
+              const isActive = activeTab === key;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => handleTabChange(key)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={label}
+                  testID={`findbar-tab-${key}`}
+                  style={{
+                    backgroundColor: isActive ? colors.primary : "transparent",
+                    borderRadius: 14,
+                  }}
+                  className="flex-1 flex-row items-center justify-center gap-1.5 py-3 px-1 min-h-[44px]"
+                >
+                  <Icon
+                    size={13}
+                    color={isActive ? colors.primaryForeground : colors.foreground}
+                    strokeWidth={isActive ? 2.5 : 2.25}
+                  />
+                  <Text
+                    className={`text-xs font-semibold ${isActive ? "text-primary-foreground" : "text-foreground"}`}
+                    numberOfLines={1}
                   >
-                    <Icon size={13} color={isActive ? colors.primaryForeground : colors.foreground} strokeWidth={isActive ? 2.5 : 2.25} />
-                    <Text
-                      className={`text-xs font-semibold ${isActive ? "text-primary-foreground" : "text-foreground"}`}
-                      numberOfLines={1}
-                    >
-                      {label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
-          {/* Filter fields — p-5 consistent padding, gap-3 even spacing */}
-          <View style={{ padding: 16, paddingTop: 12, gap: 10 }}>
+          {/* Filter fields — generous padding + gap so the segmented control,
+              each field, and the Find button breathe (no cramped rows). */}
+          <View style={{ padding: 16, paddingTop: 16, gap: 14 }}>
             <FindBarFilters
               activeTab={activeTab}
               programValues={programValues}
@@ -232,6 +221,8 @@ function FindButton({ onPress, label }: { onPress: () => void; label: string }) 
         onPressIn={() => { scale.value = withSpring(0.97, { damping: 20 }); }}
         onPressOut={() => { scale.value = withSpring(1, { damping: 20 }); }}
         accessibilityRole="button"
+        accessibilityLabel={label}
+        testID="findbar-find"
         style={{ overflow: "hidden", borderRadius: 16 }}
       >
         <GradientView

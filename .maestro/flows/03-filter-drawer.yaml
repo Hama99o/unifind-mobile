@@ -1,0 +1,42 @@
+# 03-filter-drawer.yaml — Filter drawer open / apply flow.
+#
+# Validates:
+#   - Filter trigger button is tappable on the Find Programs screen.
+#   - Filter drawer appears.
+#   - Apply button closes the drawer and applies filters.
+#
+# testIDs: tab-program-explorer, subnav-tab-programs,
+#          filter-drawer-trigger, filter-drawer-apply
+
+appId: org.unifind.app
+tags:
+  - filter
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Navigate to Program Explorer
+- tapOn:
+    id: tab-program-explorer
+- waitForAnimationToEnd
+
+# Ensure the programs sub-tab is active
+- tapOn:
+    id: subnav-tab-programs
+- waitForAnimationToEnd
+
+# Open filter drawer
+- tapOn:
+    id: filter-drawer-trigger
+- waitForAnimationToEnd
+
+# Drawer should be open — Apply button visible
+- assertVisible:
+    id: filter-drawer-apply
+
+# Apply (no filters selected — just close)
+- tapOn:
+    id: filter-drawer-apply
+- waitForAnimationToEnd

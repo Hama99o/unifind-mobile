@@ -1,7 +1,7 @@
 /**
  * HomeAppBar — top bar for the home screen.
  *
- * Left side:  UniFind wordmark (branded, always turquoise on prussian).
+ * Left side:  UniFind wordmark (real brand asset — white variant on prussian).
  * Right side: language toggle pill + avatar/sign-in button.
  *
  * Design: floats over the hero gradient (transparent background + the hero
@@ -9,13 +9,13 @@
  * status bar. RTL-aware.
  */
 
-import { View, Pressable } from "react-native";
-import { Image } from "react-native";
+import { View, Pressable, Image } from "react-native";
 import { User, Globe } from "lucide-react-native";
 import { Text } from "@/components/ui/text";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { useAuthStore } from "@/stores/authStore";
+import { Logo } from "@/components/shared/Logo";
 
 interface HomeAppBarProps {
   onLanguageToggle?: () => void;
@@ -31,16 +31,8 @@ export function HomeAppBar({ onLanguageToggle, onProfilePress }: HomeAppBarProps
     <View
       className={`flex-row items-center justify-between px-5 py-3 ${isRtl ? "flex-row-reverse" : ""}`}
     >
-      {/* Wordmark */}
-      <View className={`flex-row items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
-        <View className="w-7 h-7 bg-turquoise rounded-lg items-center justify-center">
-          {/* Small "U" icon to represent the app — no external image needed */}
-          <Text className="text-prussian text-xs font-black">U</Text>
-        </View>
-        <Text className="text-white text-lg font-black tracking-wide">
-          uni<Text className="text-turquoise text-lg font-black">find</Text>
-        </Text>
-      </View>
+      {/* Wordmark — real brand asset, white variant on prussian surface */}
+      <Logo variant="white" height={26} />
 
       {/* Right actions */}
       <View className={`flex-row items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>

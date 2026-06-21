@@ -14,7 +14,10 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
+        // mutedForeground (mid-gray) — NOT `muted`, which is the near-white
+        // background token and made inactive tabs invisible on the light bar.
+        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarLabelStyle: { fontWeight: "600" },
         tabBarStyle: {
           backgroundColor: colors.background,
           borderTopColor: colors.border,
@@ -26,6 +29,8 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.home"),
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+          tabBarTestID: "tab-home",
+          tabBarAccessibilityLabel: "Home",
         }}
       />
       <Tabs.Screen
@@ -33,6 +38,8 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.programExplorer"),
           tabBarIcon: ({ color, size }) => <Compass color={color} size={size} />,
+          tabBarTestID: "tab-program-explorer",
+          tabBarAccessibilityLabel: "Program Explorer",
         }}
       />
       <Tabs.Screen
@@ -40,6 +47,8 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.growthCenter"),
           tabBarIcon: ({ color, size }) => <GraduationCap color={color} size={size} />,
+          tabBarTestID: "tab-growth-center",
+          tabBarAccessibilityLabel: "Growth Center",
         }}
       />
       <Tabs.Screen
@@ -47,6 +56,8 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.profile"),
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          tabBarTestID: "tab-profile",
+          tabBarAccessibilityLabel: "Profile",
         }}
       />
     </Tabs>

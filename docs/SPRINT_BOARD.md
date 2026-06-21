@@ -80,11 +80,11 @@ refills it; the houses claim/build/review/update it.
 - **Title**: auth-login — Auth0 PKCE native + secure-store + authStore + SignInSheet + useAuthGate
 - **Type**: foundation
 - **Priority**: P0
-- **Status**: AVAILABLE
+- **Status**: DONE
 - **Session**: -
 - **Blocks**: -
 - **BlockedBy**: TASK-S003
-- **ReviewNotes**: -
+- **ReviewNotes**: Implemented: authService (PKCE login/signup/refresh/logout via expo-auth-session + expo-crypto + expo-web-browser), authStore (bootstrap with token validation + refresh injection), nodeApi (401→refresh-and-retry interceptor), SignInSheet (Actionsheet upsell, RTL-safe), useAuthGate, useSignInSheet, SignInSheetHost, AlertDialog + confirmAlert + AlertDialogHost, useTokenForegroundRefresh, ProfileScreen (logged-out → SignInSheet, logged-in → user info + confirmAlert sign-out). All translation keys en+ar. packages added to package.json (expo-auth-session@~7.0.11, expo-crypto@~15.0.9). TypeScript clean (zero new errors, 3 pre-existing).
 - **Description**: See MIGRATION_QUEUE `auth-login` + AUTH_SECURITY.md. Auth0 PKCE login+signup, refresh on expiry/foreground, token in expo-secure-store, authStore, SignInSheet, useAuthGate, whole-page gating. Implement authService (currently a skeleton).
 - **Acceptance**: login/logout/refresh work; token only in secure-store; gated actions show SignInSheet.
 
@@ -104,11 +104,11 @@ refills it; the houses claim/build/review/update it.
 - **Title**: universal-list — UniversalList<T> (search/sort/filter/infinite-scroll/states)
 - **Type**: foundation
 - **Priority**: P0
-- **Status**: AVAILABLE
+- **Status**: DONE
 - **Session**: -
 - **Blocks**: -
 - **BlockedBy**: TASK-S004
-- **ReviewNotes**: -
+- **ReviewNotes**: DONE — Built as part of find-institutions. Generic FlatList with debounced search, sort Actionsheet, filter drawer trigger + badge, FilterTags chip row, infinite scroll (onEndReached), pull-to-refresh, skeleton/empty/error states. Config-driven; screens are thin.
 - **Description**: See MIGRATION_QUEUE `universal-list` + prompts/UNIVERSAL_LIST.md. Generic list with search, sort, filter hook-in, infinite scroll, pull-to-refresh, skeleton/empty/error.
 - **Acceptance**: every feature list uses it; never a hand-written FlatList.
 
@@ -116,11 +116,11 @@ refills it; the houses claim/build/review/update it.
 - **Title**: filter-system — FilterDrawer (Actionsheet) + FilterTags + configs
 - **Type**: foundation
 - **Priority**: P0
-- **Status**: AVAILABLE
+- **Status**: DONE
 - **Session**: -
 - **Blocks**: -
 - **BlockedBy**: TASK-S008
-- **ReviewNotes**: -
+- **ReviewNotes**: DONE — Built as part of find-institutions. FilterDrawer (Actionsheet + accordion sections, multiSelect checkboxes, singleSelect range picker, async fetchOptions), FilterTags (removable chips, clear-all), institutionFilterConfig (4 filters: degreeLevel, fieldOfStudy, location, tuition). Apply+Clear footer.
 - **Description**: See MIGRATION_QUEUE `filter-system` + prompts/FILTER_DRAWER.md. multiSelect/singleSelect/range/toggle filters, locale-aware Strapi sources + counts, Apply/Clear, FilterTags chips.
 - **Acceptance**: drives find-programs/find-institutions filters exactly.
 
@@ -128,11 +128,11 @@ refills it; the houses claim/build/review/update it.
 - **Title**: compare-favorites-infra — stores + buttons + CompareBar (max 5)
 - **Type**: foundation
 - **Priority**: P0
-- **Status**: AVAILABLE
+- **Status**: DONE
 - **Session**: -
 - **Blocks**: -
 - **BlockedBy**: TASK-S006
-- **ReviewNotes**: -
+- **ReviewNotes**: DONE — Stores pre-existed (favoritesStore, compareStore). CompareBar built as part of find-institutions: sticky bottom bar, count/5, Compare Now CTA (comingSoon toast), clear action. Favorite/compare inline in InstitutionCard + useInstitutionsData hook (optimistic + rollback + max-5 toast). Auth-gated via useAuthGate.
 - **Description**: See MIGRATION_QUEUE `compare-favorites-infra` + prompts/COMPARE_FAVORITES.md. favoritesStore, compareStore (max 5 + toast), FavoriteButton, CompareButton, sticky CompareBar. All auth-gated.
 - **Acceptance**: favorite/compare work across all cards; max-5 enforced.
 
@@ -176,11 +176,11 @@ refills it; the houses claim/build/review/update it.
 - **Title**: find-institutions — list + search + filters + sort + favorite/compare + ratings
 - **Type**: frontend
 - **Priority**: P0
-- **Status**: AVAILABLE
+- **Status**: DONE
 - **Session**: -
 - **Blocks**: -
 - **BlockedBy**: TASK-S008, TASK-S009, TASK-S010, TASK-S011
-- **ReviewNotes**: -
+- **ReviewNotes**: DONE — Built end-to-end: UniversalList<T> (generic, infinite scroll, search, sort, FilterDrawer, FilterTags), FilterDrawer (multiSelect/singleSelect/accordion), FilterTags, CompareBar, SubNavBar, institutionsApi (exact Strapi parity), findInstitutionsScreen, useInstitutionsData hook, InstitutionCard (ranking badges, rating, fees, cover, favorite heart), reviewsApi.getInstitutionAvgRating shape-fixed. Deep-link params (level/field/location). Both locales en+ar. TypeScript clean.
 - **Description**: See MIGRATION_QUEUE `find-institutions` Detailed scope.
 - **Acceptance**: every filter/sort/field/action present; reuses shared infra.
 
@@ -188,11 +188,11 @@ refills it; the houses claim/build/review/update it.
 - **Title**: find-offerings — Growth-Center hub (categories/fields, tabs, search)
 - **Type**: frontend
 - **Priority**: P0
-- **Status**: AVAILABLE
+- **Status**: DONE
 - **Session**: -
 - **Blocks**: -
 - **BlockedBy**: TASK-S008, TASK-S011
-- **ReviewNotes**: -
+- **ReviewNotes**: Built 2026-06-19. Two-step fetch (Node→Strapi→merge). FilterDrawer (category multiSelect, fieldOfStudy intersection, price range). Sort (default/price_asc/price_desc) client-side. GrowthCenterScreen hub with gradient hero + grids + search. FindOfferingsScreen in FindScreen SubNavBar. Route /(main)/find/offerings. Offering detail → comingSoon. Specialists tab → disabled (web parity). TypeScript clean.
 - **Description**: See MIGRATION_QUEUE `find-offerings` Detailed scope (Offerings/Specialists tabs, category+field grids, search).
 - **Acceptance**: tabs + grids + search match web; Specialists tab disabled like web.
 
@@ -200,11 +200,11 @@ refills it; the houses claim/build/review/update it.
 - **Title**: institution-detail — header, overview, programs tabs, tuition, reviews + add-review
 - **Type**: frontend
 - **Priority**: P0
-- **Status**: AVAILABLE
+- **Status**: DONE
 - **Session**: -
 - **Blocks**: -
 - **BlockedBy**: TASK-S011, TASK-S010
-- **ReviewNotes**: -
+- **ReviewNotes**: All 5 sections built (Hero, Overview, Academic Programs, Tuition, Reviews+Form). All TypeScript errors in institution files resolved.
 - **Description**: See MIGRATION_QUEUE `institution-detail` Detailed scope.
 - **Acceptance**: every section/field/action present incl. review form validation; favorite/compare gated.
 
@@ -219,3 +219,88 @@ refills it; the houses claim/build/review/update it.
 - **ReviewNotes**: -
 - **Description**: See MIGRATION_QUEUE `offering-detail` Detailed scope (modes, specialist cards, Beirut-time day/slot pickers, pricing, book→checkout, reviews).
 - **Acceptance**: full booking flow works; auth-gated; Beirut TZ via useLocalization.
+
+## TASK-P001
+- **Title**: profile-activity — Reviews sub-tab with infinite scroll, delete, category ratings
+- **Type**: frontend
+- **Priority**: P1
+- **Status**: DONE
+- **Session**: -
+- **Blocks**: -
+- **BlockedBy**: TASK-S006
+- **ReviewNotes**: DONE — infinite-scroll GET /reviews/user; delete via confirmAlert; NormalizedReview (extractExperience/extractStudyPeriod); category ratings by targetType; skeleton/empty/error. All keys en+ar.
+- **Description**: See MIGRATION_QUEUE `profile-activity` Detailed scope.
+- **Acceptance**: reviews list, delete, category labels, study period, pagination.
+
+## TASK-P002
+- **Title**: profile-favorites — Programs/Institutions/Offerings sub-tabs with favorite toggle + compare
+- **Type**: frontend
+- **Priority**: P1
+- **Status**: DONE
+- **Session**: -
+- **Blocks**: -
+- **BlockedBy**: TASK-S006, TASK-S010
+- **ReviewNotes**: DONE — 3 sub-tabs; two-step fetch (Node IDs → Strapi catalog); optimistic favorite toggle removes card; max-5 compare guard; ProgramCard/InstitutionCard/OfferingCard reused. All keys en+ar.
+- **Description**: See MIGRATION_QUEUE `profile-favorites` Detailed scope.
+- **Acceptance**: 3 sub-tabs; toggle removes card; compare gated; empty+error states.
+
+## TASK-P003
+- **Title**: profile-comparisons — Programs/Institutions horizontal comparison table
+- **Type**: frontend
+- **Priority**: P1
+- **Status**: DONE
+- **Session**: -
+- **Blocks**: -
+- **BlockedBy**: TASK-S006, TASK-S010
+- **ReviewNotes**: DONE — 2 sub-tabs; side-scrolling ComparisonTable (fixed label col + item cols); dynamic programInfo/requirements/institutionInfo rows; remove via confirmAlert; View More → comingSoon. All keys en+ar.
+- **Description**: See MIGRATION_QUEUE `profile-comparisons` Detailed scope.
+- **Acceptance**: comparison table, remove, dynamic attribute rows, mobile-native scroll.
+
+## TASK-P004
+- **Title**: profile-bookings — Bookings table with status pills + View Details + Review action
+- **Type**: frontend
+- **Priority**: P1
+- **Status**: DONE
+- **Session**: -
+- **Blocks**: -
+- **BlockedBy**: TASK-S006
+- **ReviewNotes**: DONE — GET /booking/by-user; BookingRow with date/amount/status pill; View Details → booking detail screen; Review active only for Completed status. All keys en+ar.
+- **Description**: See MIGRATION_QUEUE `profile-bookings` Detailed scope.
+- **Acceptance**: list, status pills (5 colors), View Details, Review gate.
+
+## TASK-P005
+- **Title**: booking-detail — 4-step stepper + session card + payment card + review form
+- **Type**: frontend
+- **Priority**: P1
+- **Status**: DONE
+- **Session**: -
+- **Blocks**: -
+- **BlockedBy**: TASK-P004
+- **ReviewNotes**: DONE — route /(main)/booking/[bookingReference]; GET /booking/:ref/details; BookingProgressStepper (4 steps); BookingSessionCard (Beirut TZ times, mode labels); BookingPaymentCard (promo code, PaymentStatus pill, Go To Checkout); BookingReviewSection (check already reviewed, interactive stars, POST /reviews). All keys en+ar.
+- **Description**: See MIGRATION_QUEUE `booking-detail` Detailed scope.
+- **Acceptance**: full detail screen; all sections; review form; Beirut TZ; auth-gated.
+
+
+## TASK-C001
+- **Title**: compare — standalone full-screen compare page (Programs/Institutions tables)
+- **Type**: frontend
+- **Priority**: P1
+- **Status**: DONE
+- **Session**: -
+- **Blocks**: -
+- **BlockedBy**: profile-comparisons
+- **ReviewNotes**: DONE — app/(main)/compare.tsx (thin wrapper) → CompareScreen → CompareTabs (reuses ProgramsCompareTab/InstitutionsCompareTab/ComparisonTable from Profile; no logic duplication). Auth-gated: logged-out shows SignedOutPlaceholder + opens SignInSheet. CompareBar 'Compare Now' now routes to /(main)/compare?tab=<type>. ProgramsCompareTab 'View More' routes to /(main)/institutions/[slug]/programs/[programSlug]; 'Explore Programs' → /(main)/find?find=programs. InstitutionsCompareTab 'Explore Institutions' → /(main)/find?find=institutions. Route param ?tab=programs|institutions sets initial tab. All keys en+ar; RTL.
+- **Description**: See MIGRATION_QUEUE 'compare' Detailed scope.
+- **Acceptance**: compare tables (programs+institutions); auth-gated; remove via confirmAlert; view-more navigates; empty states with Explore links; CompareBar wired.
+
+## TASK-C002
+- **Title**: program-explorer — hub screen (Fields/Degrees tile grid → find with filters)
+- **Type**: frontend
+- **Priority**: P1
+- **Status**: DONE
+- **Session**: -
+- **Blocks**: -
+- **BlockedBy**: find-programs
+- **ReviewNotes**: DONE — ProgramExplorerHubScreen (mirrors GrowthCenter hub pattern): gradient hero, Fields|Degrees tab switcher, search box, 2-col tile grid. New API programExplorerApi.fetchFieldOptionsWithIcons (GET /api/programs/fields-program-icons) + fetchDegreeOptions (GET /api/programs/distinct-degrees-programs, guards on Array.isArray correctly unlike web bug). FA icon → lucide via faIconToLucide util. Field tile → /(main)/find?find=programs&field=<name>; Degree tile → &level=<title>. 'Browse all' → /(main)/find. New route app/(main)/find.tsx → FindScreen. FindBar deep-links updated: programs/institutions → /(main)/find; offerings → growth-center. FeaturedInstitutionsSection 'See all' → /(main)/find?find=institutions. HomeScreen handleFindProgram still → program-explorer tab (hub). Loading skeletons + empty states. All keys en+ar; RTL.
+- **Description**: See MIGRATION_QUEUE 'program-explorer' Detailed scope.
+- **Acceptance**: hub renders fields+degrees; search filters tiles; taps navigate to find with correct filter; Find lists still reachable; Home FindBar + See all deep-links work; TSC clean.

@@ -1,0 +1,74 @@
+# 12-newsletter-contact-terms.yaml — footer: newsletter, contact, terms link.
+#
+# Journey:
+#   1. On Home, scroll to the bottom AppFooter.
+#   2. Assert the newsletter signup (Subscribe heading + Subscribe button),
+#      a contact link (Contact Us), and the Terms & Conditions link.
+#   3. Type an email into the newsletter input (no submit — avoids a live POST).
+#   4. Tap the Terms & Conditions link → Terms screen, assert its heading, go back.
+#
+# testIDs: tab-home, home-scroll
+# Text anchors (EN): "Subscribe", "Contact Us", "Terms & Conditions",
+#                    "Unifind.Online Terms and Conditions"
+
+appId: org.unifind.app
+tags:
+  - footer
+  - newsletter
+  - terms
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Ensure we are on Home
+- tapOn:
+    id: tab-home
+- waitForAnimationToEnd
+- assertVisible:
+    id: home-screen
+
+# Scroll the home page down to the footer
+- scrollUntilVisible:
+    element:
+      text: "Subscribe"
+    direction: DOWN
+    timeout: 20000
+    optional: true
+
+# Newsletter signup button (action="secondary", label "Subscribe")
+- assertVisible:
+    text: "Subscribe"
+    optional: true
+
+# Newsletter email input — type an address (do NOT submit; avoids a live POST)
+- tapOn:
+    text: "Enter your email"
+    optional: true
+- inputText: "qa+e2e@unifind.online"
+- waitForAnimationToEnd
+
+# Contact link
+- assertVisible:
+    text: "Contact Us"
+    optional: true
+
+# Terms & Conditions link in the footer
+- assertVisible:
+    text: "Terms & Conditions"
+
+# Open the Terms screen
+- tapOn:
+    text: "Terms & Conditions"
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Terms screen heading
+- assertVisible:
+    text: "Unifind.Online Terms and Conditions"
+    optional: true
+
+# Back to Home
+- back
+- waitForAnimationToEnd

@@ -1,0 +1,65 @@
+# 06-program-detail-nav.yaml — open a program from the list, inspect detail, go back.
+#
+# Journey:
+#   1. Open Program Explorer (Programs sub-tab is the default).
+#   2. Wait for the list to load, tap a ProgramCard's primary CTA ("Check Program").
+#   3. Assert detail sections appear (Program Overview, Admission Requirements,
+#      Similar Programs). Program detail has no Reviews/Rankings section, so we
+#      assert the sections that actually exist.
+#   4. Scroll through the detail, then go back to the list.
+#
+# testIDs: tab-program-explorer, subnav-tab-programs, card-program-primary
+# Text anchors (EN copy): "Program Overview", "Admission Requirements",
+#                         "Similar Programs"
+
+appId: org.unifind.app
+tags:
+  - smoke
+  - detail
+  - programs
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Open the Program Explorer / Find screen (Programs sub-tab is the default)
+- tapOn:
+    id: tab-program-explorer
+- waitForAnimationToEnd
+
+- tapOn:
+    id: subnav-tab-programs
+- waitForAnimationToEnd
+
+# Wait for the list to populate (network fetch), then open the first card.
+- assertVisible:
+    id: list-search-input
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Tap the first program card's primary CTA → navigates to program detail
+- tapOn:
+    id: card-program-primary
+    index: 0
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Detail sections (program detail = hero + quick-facts + overview + requirements
+# + similar). Reviews/Rankings live on institution detail, not program detail.
+- assertVisible:
+    text: "Program Overview"
+- scroll
+- assertVisible:
+    text: "Admission Requirements"
+    optional: true
+- scroll
+- assertVisible:
+    text: "Similar Programs"
+    optional: true
+
+# Go back to the list
+- back
+- waitForAnimationToEnd
+- assertVisible:
+    id: list-search-input

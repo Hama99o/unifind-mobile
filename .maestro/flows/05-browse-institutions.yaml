@@ -1,0 +1,56 @@
+# 05-browse-institutions.yaml — browse the Institutions list + filter it.
+#
+# Journey:
+#   1. Open Program Explorer (Find screen).
+#   2. Switch the SubNavBar to the Institutions sub-tab.
+#   3. See the institutions list (search input rendered by UniversalList).
+#   4. Open the filter drawer, apply (no selection = close), see the list again.
+#
+# testIDs: tab-program-explorer, subnav-tab-institutions, list-search-input,
+#          filter-drawer-trigger, filter-drawer-apply
+#
+# Note: InstitutionCard has no testIDs, so we anchor on the UniversalList
+# search input + the Institutions sub-tab label instead of a card.
+
+appId: org.unifind.app
+tags:
+  - smoke
+  - institutions
+  - filter
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Open the Program Explorer / Find screen
+- tapOn:
+    id: tab-program-explorer
+- waitForAnimationToEnd
+
+# Switch to the Institutions sub-tab
+- tapOn:
+    id: subnav-tab-institutions
+- waitForAnimationToEnd
+
+# The institutions list should render its search bar
+- assertVisible:
+    id: list-search-input
+
+# Open the filter drawer
+- tapOn:
+    id: filter-drawer-trigger
+- waitForAnimationToEnd
+
+# Drawer is open — Apply button visible
+- assertVisible:
+    id: filter-drawer-apply
+
+# Apply (no filters selected — closes the drawer and re-renders the list)
+- tapOn:
+    id: filter-drawer-apply
+- waitForAnimationToEnd
+
+# Filtered list still shows its search bar (we are back on the list)
+- assertVisible:
+    id: list-search-input

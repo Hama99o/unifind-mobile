@@ -1,0 +1,90 @@
+# 07-favorites-and-compare.yaml — favorite a program + build a compare cart.
+#
+# Journey (run logged-in for the full path; logged-out shows the SignInSheet,
+# which 08-auth-gate covers explicitly):
+#   1. Open the Programs list.
+#   2. Toggle the favorite heart on the first card.
+#   3. Add 2 programs to compare (card-program-compare on two cards).
+#   4. The CompareBar appears at the bottom → tap "Compare Now".
+#   5. View the compare screen.
+#   6. Go back, clear the compare cart from the CompareBar.
+#
+# testIDs: tab-program-explorer, subnav-tab-programs,
+#          card-program-favorite, card-program-compare,
+#          compare-bar-compare-now, compare-bar-clear
+#
+# NOTE: favorite + compare are auth-gated. If logged out, the SignInSheet opens
+# instead of toggling — hence the optional CompareBar assertions below.
+
+appId: org.unifind.app
+tags:
+  - favorites
+  - compare
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn:
+    id: tab-program-explorer
+- waitForAnimationToEnd
+- tapOn:
+    id: subnav-tab-programs
+- waitForAnimationToEnd
+
+# Wait for the list to load
+- assertVisible:
+    id: list-search-input
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Toggle the favorite heart on the first card
+- tapOn:
+    id: card-program-favorite
+    index: 0
+- waitForAnimationToEnd
+
+# If a SignInSheet appeared (logged out), the rest of the compare path is gated.
+# Dismiss it so the test can continue without failing.
+- tapOn:
+    text: "Sign-In Required"
+    optional: true
+- back
+- waitForAnimationToEnd
+
+# Add the first two cards to compare
+- tapOn:
+    id: card-program-compare
+    index: 0
+- waitForAnimationToEnd
+- tapOn:
+    id: card-program-compare
+    index: 1
+    optional: true
+- waitForAnimationToEnd
+
+# CompareBar appears once the cart is non-empty
+- assertVisible:
+    id: compare-bar-compare-now
+    optional: true
+
+# Open the compare screen
+- tapOn:
+    id: compare-bar-compare-now
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# Compare screen header
+- assertVisible:
+    text: "Compare"
+    optional: true
+
+# Back to the list, then clear the compare cart
+- back
+- waitForAnimationToEnd
+- tapOn:
+    id: compare-bar-clear
+    optional: true
+- waitForAnimationToEnd

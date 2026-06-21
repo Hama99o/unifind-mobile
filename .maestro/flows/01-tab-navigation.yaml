@@ -1,0 +1,43 @@
+# 01-tab-navigation.yaml — bottom tab bar navigation smoke test.
+#
+# Validates:
+#   - Tapping each tab navigates to the correct screen.
+#   - Tapping back to Home restores the home screen.
+#
+# testIDs: tab-home, tab-program-explorer, tab-growth-center, tab-profile
+
+appId: org.unifind.app
+tags:
+  - smoke
+  - navigation
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Navigate to Program Explorer
+- tapOn:
+    id: tab-program-explorer
+- waitForAnimationToEnd
+- assertVisible:
+    id: subnav-tab-programs
+
+# Navigate to Growth Center
+- tapOn:
+    id: tab-growth-center
+- waitForAnimationToEnd
+
+# Navigate to Profile
+- tapOn:
+    id: tab-profile
+- waitForAnimationToEnd
+- assertVisible:
+    id: profile-tab-profile
+
+# Return to Home
+- tapOn:
+    id: tab-home
+- waitForAnimationToEnd
+- assertVisible:
+    id: findbar-find

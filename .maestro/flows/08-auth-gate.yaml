@@ -1,0 +1,68 @@
+# 08-auth-gate.yaml — protected action shows the SignInSheet when logged out.
+#
+# Journey (requires a logged-OUT user — clearState resets the secure-store token):
+#   1. Open the Programs list.
+#   2. Trigger a protected action (toggle favorite, then add to compare).
+#   3. Assert the SignInSheet upsell appears (Sign In + Create Account buttons,
+#      plus the "Sign-In Required" title).
+#   4. Dismiss the sheet (swipe down / back).
+#
+# testIDs: tab-program-explorer, subnav-tab-programs, card-program-favorite,
+#          card-program-compare, signin-sheet-signin, signin-sheet-create-account
+#
+# NOTE: there is no root `signin-sheet` testID in the source — the Actionsheet
+# is identified by its action buttons (signin-sheet-signin /
+# signin-sheet-create-account) and the "Sign-In Required" title.
+
+appId: org.unifind.app
+tags:
+  - auth
+  - signin
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn:
+    id: tab-program-explorer
+- waitForAnimationToEnd
+- tapOn:
+    id: subnav-tab-programs
+- waitForAnimationToEnd
+
+# Wait for the list to load so a real card is present
+- assertVisible:
+    id: list-search-input
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Trigger a protected action — favorite a card while logged out
+- tapOn:
+    id: card-program-favorite
+    index: 0
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# The SignInSheet upsell must appear
+- assertVisible:
+    text: "Sign-In Required"
+- assertVisible:
+    id: signin-sheet-signin
+- assertVisible:
+    id: signin-sheet-create-account
+
+# Dismiss the sheet (back button / swipe down close)
+- back
+- waitForAnimationToEnd
+
+# A second protected action (add to compare) should also re-open the sheet
+- tapOn:
+    id: card-program-compare
+    index: 0
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: signin-sheet-signin
+- back
+- waitForAnimationToEnd

@@ -16,6 +16,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withDelay,
   Easing,
 } from "react-native-reanimated";
 import { GradientView } from "@/components/shared/GradientView";
@@ -34,6 +35,8 @@ import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
+import { usePressScale } from "@/hooks/usePressScale";
+import { SHADOW_COLOR } from "@/config/theme";
 
 const LucideIconMap = {
   compass: Compass,
@@ -129,6 +132,7 @@ function GuideCard({
 }) {
   const { t, isRtl } = useCustomTranslation();
   const colors = useColors();
+  const { animStyle: ctaAnimStyle, handlePressIn, handlePressOut } = usePressScale();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(16);
   const style = useAnimatedStyle(() => ({
@@ -137,19 +141,16 @@ function GuideCard({
   }));
 
   useEffect(() => {
-    const delay = animOffset;
-    setTimeout(() => {
-      opacity.value = withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) });
-      translateY.value = withTiming(0, { duration: 380, easing: Easing.out(Easing.quad) });
-    }, delay);
+    opacity.value = withDelay(animOffset, withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) }));
+    translateY.value = withDelay(animOffset, withTiming(0, { duration: 380, easing: Easing.out(Easing.quad) }));
   }, []);
 
   return (
     <Animated.View style={style} className="w-full">
-      <View className="bg-card rounded-2xl p-4" style={{ elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 }}>
+      <View className="bg-card rounded-2xl p-4" style={{ elevation: 2, shadowColor: SHADOW_COLOR, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 }}>
         {/* Track label */}
         <Text
-          className={`text-[10px] font-bold text-turquoise uppercase tracking-wider mb-3 ${isRtl ? "text-right" : ""}`}
+          className={`text-xs font-bold text-foreground uppercase tracking-wider mb-3 ${isRtl ? "text-right" : ""}`}
         >
           {t(trackLabelKey)}
         </Text>
@@ -160,8 +161,8 @@ function GuideCard({
 
         {/* CTA */}
         {ctaStyle === "primary" ? (
-          /* Gradient primary: always white bold label for contrast */
-          <View className="mt-2 rounded-xl overflow-hidden" style={{ height: 44 }}>
+          /* Gradient primary: Animated.View driven by usePressScale, mirrors FindButton */
+          <Animated.View style={[ctaAnimStyle, { marginTop: 8, borderRadius: 12, overflow: "hidden", height: 44 }]}>
             <GradientView
               colors={[colors.primary, colors.secondary]}
               start={{ x: 0, y: 0 }}
@@ -170,13 +171,15 @@ function GuideCard({
             >
               <Pressable
                 onPress={onCta}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
                 accessibilityRole="button"
-                style={{ flex: 1, width: "100%", alignItems: "center", justifyContent: "center" }}
+                style={{ alignItems: "center", justifyContent: "center", paddingHorizontal: 16, paddingVertical: 10 }}
               >
                 <Text className="text-white font-bold text-sm">{ctaLabel}</Text>
               </Pressable>
             </GradientView>
-          </View>
+          </Animated.View>
         ) : (
           /* Outline secondary: border-primary + text-primary; legible in light + dark */
           <Button
@@ -196,11 +199,11 @@ export function GuideSection({ onFindProgram, onDiscoverGrowth }: GuideSectionPr
   const { t } = useCustomTranslation();
 
   return (
-    <View className="py-8 px-4 bg-background">
+    <View className="pt-12 pb-10 px-4 bg-background">
       <SectionHeader titleKey="guidesYou" />
 
       {/* Two full-width stacked cards */}
-      <View className="gap-3">
+      <View className="gap-4">
         <GuideCard
           steps={PROGRAM_STEPS}
           trackLabelKey="guideProgramTrack"

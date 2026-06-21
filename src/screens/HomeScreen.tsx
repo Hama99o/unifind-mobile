@@ -29,6 +29,7 @@ import { FeaturedInstitutionsSection } from "@/screens/home/FeaturedInstitutions
 import { TestimonialsSection } from "@/screens/home/TestimonialsSection";
 import { WelcomeModal } from "@/screens/home/WelcomeModal";
 import { HomeSkeleton } from "@/screens/home/HomeSkeleton";
+import { AppFooter } from "@/components/shared/AppFooter";
 import { fetchFeaturedOfferings, fetchFeaturedInstitutions } from "@/api/catalog";
 import { fetchTestimonials } from "@/services/testimonialsService";
 
@@ -82,11 +83,12 @@ export default function HomeScreen() {
 
   return (
     // edges={[]} — hero gradient covers the full status-bar area intentionally
-    <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-background" testID="home-screen">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
         bounces
+        testID="home-scroll"
       >
         <FindBarSection
           onLanguageToggle={handleLanguageToggle}
@@ -100,6 +102,8 @@ export default function HomeScreen() {
         <NumbersSection />
         <FeaturedInstitutionsSection />
         <TestimonialsSection />
+        {/* Footer — mirrors web UFContactUs (logo, contact, socials, nav, newsletter) */}
+        <AppFooter />
         {/* Bottom breathing room above tab bar */}
         <View className="h-8" />
       </ScrollView>

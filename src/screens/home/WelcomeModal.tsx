@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { Modal, View, Pressable } from "react-native";
-import * as SecureStore from "expo-secure-store";
+import { secureStorage } from "@/utils/secure-storage";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -28,7 +28,6 @@ import {
   Wallet,
   Layers,
   TrendingUp,
-  Sparkles,
   Search,
 } from "lucide-react-native";
 
@@ -36,7 +35,8 @@ import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
-import { brand } from "@/config/theme";
+import { brand, SHADOW_COLOR } from "@/config/theme";
+import { Logo } from "@/components/shared/Logo";
 
 const SEEN_KEY = "revamp_2026_seen_v3";
 
@@ -69,7 +69,7 @@ export function WelcomeModal() {
   useEffect(() => {
     (async () => {
       try {
-        const seen = await SecureStore.getItemAsync(SEEN_KEY);
+        const seen = await secureStorage.get(SEEN_KEY);
         if (!seen) {
           setVisible(true);
           scale.value = withSpring(1, { damping: 15, stiffness: 150 });
@@ -84,7 +84,7 @@ export function WelcomeModal() {
 
   const handleExplore = async () => {
     try {
-      await SecureStore.setItemAsync(SEEN_KEY, "true");
+      await secureStorage.set(SEEN_KEY, "true");
     } catch {
       // Fail silently
     }
@@ -103,7 +103,7 @@ export function WelcomeModal() {
     >
       <View className="flex-1 bg-black/65 items-center justify-center px-5">
         <Animated.View
-          style={[animStyle, { shadowColor: "#000", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.35, shadowRadius: 24, elevation: 16 }]}
+          style={[animStyle, { shadowColor: SHADOW_COLOR, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.35, shadowRadius: 24, elevation: 16 }]}
           className="w-full max-w-sm rounded-3xl overflow-hidden"
         >
           {/* ── Gradient header ────────────────────────────────────────────── */}
@@ -116,16 +116,14 @@ export function WelcomeModal() {
             {/* Glow sphere */}
             <View style={{ position: "absolute", top: -30, right: -20, width: 120, height: 120, borderRadius: 60, backgroundColor: `${brand.turquoise}1F` }} />
 
-            {/* Icon */}
-            <View className="w-16 h-16 rounded-2xl bg-turquoise/20 items-center justify-center mb-4">
-              <Sparkles size={28} color={colors.secondary} strokeWidth={1.8} />
-            </View>
+            {/* Brand wordmark */}
+            <Logo variant="white" height={32} style={{ marginBottom: 16 }} />
 
             {/* Title */}
             <Heading size="md" className="text-white font-black text-center leading-snug">
               {t("welcome_popup.title")}
             </Heading>
-            <Text className="text-white/60 text-xs text-center mt-1.5 leading-relaxed">
+            <Text className="text-white/85 text-xs text-center mt-1.5 leading-relaxed">
               {t("welcome_popup.subtitle")}
             </Text>
           </GradientView>
@@ -137,7 +135,7 @@ export function WelcomeModal() {
                 key={textKey}
                 className={`flex-row items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}
               >
-                <View className="w-9 h-9 bg-turquoise/12 rounded-xl items-center justify-center flex-shrink-0">
+                <View className="w-9 h-9 bg-lightgreen rounded-xl items-center justify-center flex-shrink-0">
                   <Icon size={17} color={colors.primary} />
                 </View>
                 <Text className={`flex-1 text-sm text-card-foreground leading-relaxed ${isRtl ? "text-right" : ""}`}>

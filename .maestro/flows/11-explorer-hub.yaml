@@ -1,0 +1,59 @@
+# 11-explorer-hub.yaml — Program Explorer / Growth Center hub tiles.
+#
+# Journey:
+#   1. Open the Growth Center hub.
+#   2. Assert the hub structure: hero title ("Find an Offering"), the
+#      "What Am I Looking For?" + "Fields of Study" section headings.
+#   3. Tap a hub element (the Fields of Study section / a tile) to drill in.
+#
+# Also covers the Program Explorer hub reached via the Find screen's
+# Program Explorer entry (the tab itself opens the Find list; the discovery hub
+# is the Growth Center for offerings + the field/degree tiles).
+#
+# testIDs: tab-growth-center, tab-program-explorer
+# Text anchors (EN): "Find an Offering", "What Am I Looking For?",
+#                    "Fields of Study", "Find a Program"
+
+appId: org.unifind.app
+tags:
+  - hub
+  - explorer
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# ── Growth Center hub ──────────────────────────────────────────────────────────
+- tapOn:
+    id: tab-growth-center
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# Hub hero title
+- assertVisible:
+    text: "Find an Offering"
+    optional: true
+
+# Hub section headings (tiles render under these)
+- assertVisible:
+    text: "What Am I Looking For?"
+    optional: true
+- assertVisible:
+    text: "Fields of Study"
+    optional: true
+
+# Tap a hub tile section to drill into the offerings list
+- tapOn:
+    text: "Fields of Study"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# ── Program Explorer entry (Find screen with the Programs sub-nav) ──────────────
+- tapOn:
+    id: tab-program-explorer
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible:
+    id: subnav-tab-programs

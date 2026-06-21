@@ -31,7 +31,7 @@ const CARD_GAP = 12;
 const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
 
 export function TestimonialsSection() {
-  const { t, lang } = useCustomTranslation();
+  const { t, lang, isRtl } = useCustomTranslation();
   const locale = lang === "ar" ? "ar" : "en";
 
   const { data: testimonials = [], isLoading, isError } = useQuery({
@@ -67,7 +67,7 @@ export function TestimonialsSection() {
           snapToInterval={SNAP_INTERVAL}
           decelerationRate="fast"
           snapToAlignment="start"
-          contentContainerStyle={{ paddingLeft: 16, paddingRight: 32 }}
+          contentContainerStyle={isRtl ? { paddingRight: 16, paddingLeft: 32 } : { paddingLeft: 16, paddingRight: 32 }}
         >
           {testimonials.map((item: TestimonialItem, index: number) => (
             <TestimonialCard

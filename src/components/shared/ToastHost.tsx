@@ -52,8 +52,11 @@ export function ToastHost() {
       pointerEvents="none"
       style={{ position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" }}
     >
-      <Animated.View style={style} className="mb-24 mx-6 px-4 py-3 rounded-2xl bg-primary shadow-lg">
-        <Text className="text-primary-foreground text-sm font-semibold text-center">{message}</Text>
+      {/* className must NOT live on Animated.View — move to inner plain View */}
+      <Animated.View style={[style, { marginBottom: 96, marginHorizontal: 24 }]}>
+        <View className="px-4 py-3 rounded-2xl bg-primary shadow-lg">
+          <Text className="text-primary-foreground text-sm font-semibold text-center">{message}</Text>
+        </View>
       </Animated.View>
       <View />
     </SafeAreaView>

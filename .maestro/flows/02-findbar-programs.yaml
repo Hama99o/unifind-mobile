@@ -1,0 +1,35 @@
+# 02-findbar-programs.yaml — FindBar: select Programs tab and press Find.
+#
+# Validates:
+#   - The Programs segment tab is tappable.
+#   - The Find button navigates to the Find screen (SubNavBar visible).
+#
+# testIDs: findbar-tab-program, findbar-find, subnav-tab-programs
+
+appId: org.unifind.app
+tags:
+  - smoke
+  - findbar
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Ensure home screen is visible
+- assertVisible:
+    id: home-screen
+
+# Tap the Programs segment
+- tapOn:
+    id: findbar-tab-program
+- waitForAnimationToEnd
+
+# Tap Find
+- tapOn:
+    id: findbar-find
+- waitForAnimationToEnd
+
+# Assert we landed on the Find screen (Programs sub-nav visible)
+- assertVisible:
+    id: subnav-tab-programs

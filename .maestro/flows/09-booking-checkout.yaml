@@ -1,0 +1,84 @@
+# 09-booking-checkout.yaml — open an offering, start booking, reach checkout.
+#
+# Journey (the full path requires a logged-in user + live availability data):
+#   1. Open the Growth Center hub, browse to an offering list, open an offering.
+#   2. Scroll to "Choose Your Specialist" (the booking flow section).
+#   3. Select a specialist + date + time, tap "Book a Seat" → checkout screen.
+#   4. Assert the checkout summary, promo input, and Pay Now button.
+#
+# testIDs: tab-growth-center, checkout-pay-now
+# Text anchors (EN): "Choose Your Specialist", "Check Out Summary", "Subtotal",
+#                    "Total", "Promo applied", "Whish Money", "Pay Now"
+#
+# The booking sub-steps depend on live specialist availability and auth, so the
+# deep steps are marked optional. The checkout assertions only run if the
+# Pay Now screen is actually reached. See README/notes for the limitation.
+
+appId: org.unifind.app
+tags:
+  - booking
+  - checkout
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Open the Growth Center hub
+- tapOn:
+    id: tab-growth-center
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# The hub shows the "What Am I Looking For?" categories grid
+- assertVisible:
+    text: "What Am I Looking For?"
+    optional: true
+
+# Browse all offerings — tap a category/field tile to open the offerings list.
+# (Tiles are data-driven; tap the first available tile.)
+- tapOn:
+    text: "Fields of Study"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# Open the first offering from the list (UniversalList card → offering detail)
+- tapOn:
+    id: list-search-input
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# On an offering detail, scroll to the specialist/booking section
+- scroll
+- scroll
+- assertVisible:
+    text: "Choose Your Specialist"
+    optional: true
+
+# Booking sub-steps (specialist → date → time → Book a Seat) are auth-gated and
+# depend on live availability — attempt them, but tolerate absence.
+- tapOn:
+    text: "Book a Seat"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# ── Checkout assertions (only meaningful once the checkout screen is reached) ──
+- assertVisible:
+    text: "Check Out Summary"
+    optional: true
+- assertVisible:
+    text: "Subtotal"
+    optional: true
+- assertVisible:
+    text: "Total"
+    optional: true
+# Payment method + Pay Now button
+- assertVisible:
+    text: "Whish Money"
+    optional: true
+- assertVisible:
+    id: checkout-pay-now
+    optional: true

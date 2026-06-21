@@ -1,0 +1,33 @@
+# 04-signin-sheet.yaml — SignInSheet appears for protected actions.
+#
+# Validates:
+#   - Tapping the Profile tab when logged out shows the sign-in prompt.
+#   - "Sign In" button is present.
+#   - "Create Account" button is present.
+#
+# Note: this flow assumes the user is NOT logged in (fresh install / cleared state).
+# testIDs: tab-profile, profile-tab-profile, signin-sheet-signin,
+#          signin-sheet-create-account
+
+appId: org.unifind.app
+tags:
+  - auth
+  - signin
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Navigate to Profile (triggers sign-in sheet when logged out)
+- tapOn:
+    id: tab-profile
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Either profile tab bar is visible (logged in) OR sign-in sheet is visible
+# (logged out). Assert the sign-in sheet buttons are visible.
+- assertVisible:
+    id: signin-sheet-signin
+- assertVisible:
+    id: signin-sheet-create-account

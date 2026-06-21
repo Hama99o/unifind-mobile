@@ -1,12 +1,13 @@
 import { Text as RNText, type TextProps } from "react-native";
 import { cn } from "@/lib/utils";
 
-type Size = "sm" | "md" | "lg" | "xl";
+type Size = "sm" | "md" | "lg" | "xl" | "2xl";
 const sizes: Record<Size, string> = {
   sm: "text-base",
   md: "text-lg",
   lg: "text-2xl",
   xl: "text-3xl",
+  "2xl": "text-4xl",
 };
 
 export function Heading({

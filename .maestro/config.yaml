@@ -1,0 +1,19 @@
+# Maestro workspace config for unifind-mobile.
+#
+# appId must match the bundle identifier / application ID used when building:
+#   iOS:     org.unifind.app  (CFBundleIdentifier in app.json)
+#   Android: org.unifind.app  (applicationId in app.json)
+#
+# To run all flows:
+#   maestro test .maestro/flows/
+#
+# To run a single flow:
+#   maestro test .maestro/flows/00-launch.yaml
+
+appId: org.unifind.app
+---
+# Tags enable selective execution:
+#   maestro test --tags smoke .maestro/flows/
+tags:
+  - smoke
+  - unifind

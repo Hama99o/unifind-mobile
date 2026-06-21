@@ -1,0 +1,69 @@
+# 10-profile-tabs.yaml — Profile tab bar: switch between the profile tabs.
+#
+# Journey (logged-in shows the ProfileTabBar; logged-out shows the SignInSheet
+# upsell — the tab assertions are then optional):
+#   1. Open the Profile tab.
+#   2. Assert the ProfileTabBar tabs (profile, bookings, favorites, comparisons,
+#      activity, credentials, about).
+#   3. Switch between several tabs.
+#
+# testIDs: tab-profile, profile-tab-profile, profile-tab-bookings,
+#          profile-tab-favorites, profile-tab-comparisons, profile-tab-activity,
+#          profile-tab-credentials, profile-tab-about
+#
+# NOTE: the source ProfileTabBar tabs are profile | credentials | about |
+# activity | favorites | comparisons | bookings. There is no standalone
+# "reviews" or "edit" tab — reviews live under Activity, and edit == the
+# Profile Information tab.
+
+appId: org.unifind.app
+tags:
+  - profile
+  - navigation
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Navigate to Profile
+- tapOn:
+    id: tab-profile
+- waitForAnimationToEnd:
+    timeout: 4000
+
+# Profile Information tab (default) is visible when logged in
+- assertVisible:
+    id: profile-tab-profile
+
+# The tab bar scrolls horizontally — switch across the tabs that exist.
+- tapOn:
+    id: profile-tab-bookings
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    id: profile-tab-favorites
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    id: profile-tab-comparisons
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    id: profile-tab-activity
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    id: profile-tab-credentials
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    id: profile-tab-about
+    optional: true
+- waitForAnimationToEnd
+
+# Return to the Profile Information tab
+- tapOn:
+    id: profile-tab-profile
+    optional: true
+- waitForAnimationToEnd

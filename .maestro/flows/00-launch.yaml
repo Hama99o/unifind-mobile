@@ -1,0 +1,34 @@
+# 00-launch.yaml — smoke test: app launches and home screen renders.
+#
+# Validates:
+#   1. The app cold-starts without crashing.
+#   2. The bottom tab bar is visible (home tab present).
+#   3. The home screen scroll view is visible (hero section rendered).
+#   4. The FindBar "Find" button is visible.
+#
+# testIDs used: home-screen, tab-home, findbar-find
+# (all set in unifind-mobile source — see docs/TEST_PLAN.md §testIDs)
+
+appId: org.unifind.app
+tags:
+  - smoke
+---
+# Launch the app fresh
+- launchApp:
+    clearState: false
+
+# Wait for the home screen to appear (bootstrap auth hydration may take ~1s)
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Assert the home screen container is visible
+- assertVisible:
+    id: home-screen
+
+# Assert the bottom tab bar home item is present
+- assertVisible:
+    id: tab-home
+
+# Assert the FindBar "Find" button is visible (hero rendered)
+- assertVisible:
+    id: findbar-find

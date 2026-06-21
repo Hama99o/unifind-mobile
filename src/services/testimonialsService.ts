@@ -14,6 +14,9 @@ import {
   fetchProgramsByDocumentIds,
   fetchOfferingsByIds,
 } from "@/api/catalog.say";
+import {
+  extractExperience as _extractExperience,
+} from "@/api/reviewsApi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,12 +61,18 @@ interface RawReviewsResponse {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Extract the text after "Experience:" in the comment field. */
-export function extractExperience(comment: string | null | undefined): string {
-  if (!comment) return "";
-  const match = comment.match(/Experience:\s*(.*)/);
-  return match ? match[1].trim() : "";
-}
+/**
+ * extractExperience — canonical version from reviewsApi (multi-line aware).
+ * M3 fix: removed the local copy; importing from reviewsApi.
+ * Re-export so any legacy import of extractExperience from this file still resolves.
+ */
+export { extractExperience } from "@/api/reviewsApi";
+
+/**
+ * Local alias so the helper usage below works without changing call sites.
+ * The canonical regex lives in reviewsApi.ts.
+ */
+const extractExperienceLocal = _extractExperience;
 
 /** Extract the text after "Program Studied:" in the comment field. */
 export function extractProgramStudied(comment: string | null | undefined): string {
@@ -132,7 +141,7 @@ export async function fetchTestimonials(locale: "en" | "ar"): Promise<Testimonia
         logoUrl: institution.logoUrl,
         title: institution.name,
         rating: review.generalRating ?? 0,
-        testimonial: extractExperience(review.comment),
+        testimonial: extractExperienceLocal(review.comment ?? ""),
         userName: review.firstName ?? "",
         userAvatar: resolvePhotoUrl(review.photo),
         userProgram: program?.name ?? "",
@@ -150,7 +159,7 @@ export async function fetchTestimonials(locale: "en" | "ar"): Promise<Testimonia
         logoUrl: "",
         title: offering.title,
         rating: review.generalRating ?? 0,
-        testimonial: extractExperience(review.comment),
+        testimonial: extractExperienceLocal(review.comment ?? ""),
         userName: review.firstName ?? "",
         userAvatar: resolvePhotoUrl(review.photo),
         userProgram: "",

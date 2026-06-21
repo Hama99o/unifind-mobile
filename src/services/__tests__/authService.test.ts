@@ -1,0 +1,404 @@
+/**
+ * authService.test.ts — unit tests for the Auth0 PKCE orchestration service.
+ *
+ * expo-auth-session, expo-web-browser, expo-crypto and expo-secure-store are
+ * globally mocked (jest.setup.ts). nodeApi is globally mocked. We override the
+ * AuthRequest / exchangeCodeAsync mocks per test to drive the login flow, and
+ * mock global.fetch for the refresh-token exchange.
+ *
+ * Coverage:
+ *   isTokenExpired   — valid token, expired token, malformed token (no payload).
+ *   fetchNodeUserInfo — success, null on empty body, null on error.
+ *   login            — happy path: tokens persisted, session set; user built
+ *                      from idToken claims + merged with Node /userinfo.
+ *   login            — cancel/dismiss path: silent abort, no tokens stored.
+ *   login            — Auth0 error result throws.
+ *   login            — success but missing code throws.
+ *   signup           — passes screen_hint=signup to the AuthRequest.
+ *   refresh          — no refresh token → false.
+ *   refresh          — happy path: new tokens persisted, session set, true.
+ *   refresh          — rotates refresh token when a new one is returned.
+ *   refresh          — failure (non-ok fetch) → logout + false.
+ *   ensureValidToken — no token → false; valid token → true; expired → refresh.
+ *   logout           — clears local session.
+ */
+
+import { authService, isTokenExpired, fetchNodeUserInfo } from "@/services/authService";
+import * as AuthSession from "expo-auth-session";
+import { nodeApi } from "@/api/nodeApi";
+import { useAuthStore } from "@/stores/authStore";
+import { secureStorage, TOKEN_KEYS } from "@/utils/secure-storage";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Build an unsigned JWT (header.payload.sig) whose payload base64-decodes. */
+function makeJwt(payload: Record<string, unknown>): string {
+  const b64 = Buffer.from(JSON.stringify(payload))
+    .toString("base64")
+    .replace(/=+$/, "");
+  return `h.${b64}.s`;
+}
+
+const FUTURE_EXP = 9999999999; // year 2286 — never expired
+const PAST_EXP = 1; // 1970 — always expired
+
+/** Snapshot of the pristine auth store state for reset between tests. */
+const INITIAL_AUTH_STATE = {
+  isLoggedIn: false,
+  isBootstrapping: true,
+  user: null,
+  accessToken: null,
+};
+
+const realFetch = global.fetch;
+
+beforeEach(async () => {
+  jest.clearAllMocks();
+  // Reset auth store (keep the action functions, reset the data fields).
+  useAuthStore.setState({ ...INITIAL_AUTH_STATE });
+  // Clear secure storage token keys (in-memory mock persists across tests).
+  await secureStorage.remove(TOKEN_KEYS.access);
+  await secureStorage.remove(TOKEN_KEYS.refresh);
+});
+
+afterEach(() => {
+  global.fetch = realFetch;
+});
+
+// ─── isTokenExpired ─────────────────────────────────────────────────────────
+
+describe("isTokenExpired", () => {
+  it("returns false for a token with a far-future exp", () => {
+    expect(isTokenExpired(makeJwt({ exp: FUTURE_EXP }))).toBe(false);
+  });
+
+  it("returns true for a token with a past exp", () => {
+    expect(isTokenExpired(makeJwt({ exp: PAST_EXP }))).toBe(true);
+  });
+
+  it("returns true for a malformed token (no decodable payload, exp defaults to 0)", () => {
+    // "no-dots" has no [1] segment → decode returns {} → exp = 0 → expired.
+    expect(isTokenExpired("no-dots")).toBe(true);
+  });
+
+  it("respects the buffer: a token expiring within the buffer counts as expired", () => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    // exp 30s in the future, default buffer 60s → treated as expired.
+    expect(isTokenExpired(makeJwt({ exp: nowSec + 30 }))).toBe(true);
+  });
+});
+
+// ─── fetchNodeUserInfo ──────────────────────────────────────────────────────
+
+describe("fetchNodeUserInfo", () => {
+  it("returns the nested data object on success", async () => {
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({
+      data: { data: { firstName: "Jane", lastName: "Doe", photo: "p.png" } },
+    });
+    const info = await fetchNodeUserInfo();
+    expect(info).toEqual({ firstName: "Jane", lastName: "Doe", photo: "p.png" });
+    expect(nodeApi.get).toHaveBeenCalledWith("/userinfo");
+  });
+
+  it("returns null when the response body has no data field", async () => {
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
+    expect(await fetchNodeUserInfo()).toBeNull();
+  });
+
+  it("returns null when the request throws", async () => {
+    (nodeApi.get as jest.Mock).mockRejectedValueOnce(new Error("network"));
+    expect(await fetchNodeUserInfo()).toBeNull();
+  });
+});
+
+// ─── login (success path) ────────────────────────────────────────────────────
+
+describe("authService.login", () => {
+  /** Drive AuthRequest.promptAsync → success with a code, and a known codeVerifier. */
+  function mockSuccessfulPrompt(code = "auth-code-123") {
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      () => ({
+        promptAsync: jest.fn(async () => ({
+          type: "success",
+          params: { code },
+        })),
+        codeVerifier: "verifier-xyz",
+      })
+    );
+  }
+
+  it("persists tokens and sets the session, building the user from idToken claims merged with Node /userinfo", async () => {
+    mockSuccessfulPrompt();
+    const idToken = makeJwt({
+      sub: "auth0|abc123",
+      name: "Claims Name",
+      email: "claims@x.com",
+      picture: "https://claims/pic.png",
+      exp: FUTURE_EXP,
+    });
+    (AuthSession.exchangeCodeAsync as jest.Mock).mockResolvedValueOnce({
+      accessToken: "ACCESS-TOK",
+      refreshToken: "REFRESH-TOK",
+      idToken,
+    });
+    // Node /userinfo overrides name (firstName+lastName) and picture (photo).
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({
+      data: { data: { firstName: "Node", lastName: "User", photo: "https://node/pic.png" } },
+    });
+
+    await authService.login();
+
+    // Tokens persisted to secure storage.
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBe("ACCESS-TOK");
+    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBe("REFRESH-TOK");
+
+    // Session set in the store.
+    const state = useAuthStore.getState();
+    expect(state.isLoggedIn).toBe(true);
+    expect(state.accessToken).toBe("ACCESS-TOK");
+    expect(state.user).toEqual({
+      sub: "auth0|abc123",
+      userID: "abc123", // sub split on "|"
+      name: "Node User", // node fullName overrides claim name
+      email: "claims@x.com", // email from claims, not overridden by node merge
+      picture: "https://node/pic.png", // node photo overrides claim picture
+    });
+  });
+
+  it("keeps the claim values when Node /userinfo is unavailable", async () => {
+    mockSuccessfulPrompt();
+    const idToken = makeJwt({
+      sub: "auth0|solo",
+      name: "Only Claims",
+      email: "solo@x.com",
+      picture: "https://claims/solo.png",
+      exp: FUTURE_EXP,
+    });
+    (AuthSession.exchangeCodeAsync as jest.Mock).mockResolvedValueOnce({
+      accessToken: "A2",
+      refreshToken: "R2",
+      idToken,
+    });
+    // Node /userinfo returns nothing → hydrate keeps base user.
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
+
+    await authService.login();
+
+    expect(useAuthStore.getState().user).toEqual({
+      sub: "auth0|solo",
+      userID: "solo",
+      name: "Only Claims",
+      email: "solo@x.com",
+      picture: "https://claims/solo.png",
+    });
+  });
+
+  it("does not persist a refresh token when none is returned", async () => {
+    mockSuccessfulPrompt();
+    (AuthSession.exchangeCodeAsync as jest.Mock).mockResolvedValueOnce({
+      accessToken: "A-only",
+      // no refreshToken
+      idToken: makeJwt({ sub: "x", exp: FUTURE_EXP }),
+    });
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
+
+    await authService.login();
+
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBe("A-only");
+    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBeNull();
+  });
+
+  it("silently aborts on a cancel/dismiss result without storing tokens or a session", async () => {
+    // The default global AuthRequest mock already resolves promptAsync → { type: "cancel" }.
+    await expect(authService.login()).resolves.toBeUndefined();
+
+    expect(AuthSession.exchangeCodeAsync).not.toHaveBeenCalled();
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBeNull();
+    expect(useAuthStore.getState().isLoggedIn).toBe(false);
+  });
+
+  it("throws when the result is an error with a description", async () => {
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      () => ({
+        promptAsync: jest.fn(async () => ({
+          type: "error",
+          error: { description: "access_denied" },
+        })),
+        codeVerifier: "v",
+      })
+    );
+    await expect(authService.login()).rejects.toThrow("Auth0 error: access_denied");
+  });
+
+  it("throws when a success result has no authorization code", async () => {
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      () => ({
+        promptAsync: jest.fn(async () => ({ type: "success", params: {} })),
+        codeVerifier: "v",
+      })
+    );
+    await expect(authService.login()).rejects.toThrow(
+      "Authorization code not found in Auth0 callback"
+    );
+  });
+});
+
+// ─── signup ────────────────────────────────────────────────────────────────
+
+describe("authService.signup", () => {
+  it("constructs the AuthRequest with screen_hint=signup in extraParams", async () => {
+    // Capture the config passed to AuthRequest, then cancel (default behaviour).
+    let capturedConfig: { extraParams?: Record<string, string> } | undefined;
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      (config: { extraParams?: Record<string, string> }) => {
+        capturedConfig = config;
+        return {
+          promptAsync: jest.fn(async () => ({ type: "cancel" })),
+          codeVerifier: "v",
+        };
+      }
+    );
+
+    await authService.signup();
+
+    expect(capturedConfig?.extraParams?.screen_hint).toBe("signup");
+  });
+});
+
+// ─── refresh ──────────────────────────────────────────────────────────────
+
+describe("authService.refresh", () => {
+  it("returns false when there is no stored refresh token", async () => {
+    expect(await authService.refresh()).toBe(false);
+    expect(global.fetch).toBe(realFetch); // fetch never replaced/called
+  });
+
+  it("exchanges the refresh token, persists new tokens and sets the session", async () => {
+    await secureStorage.set(TOKEN_KEYS.refresh, "OLD-REFRESH");
+    const newAccess = makeJwt({ sub: "auth0|refreshed", exp: FUTURE_EXP });
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ access_token: newAccess }),
+    })) as unknown as typeof fetch;
+    // hydrateUserFromNode → /userinfo returns nothing → base user kept.
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
+
+    const ok = await authService.refresh();
+
+    expect(ok).toBe(true);
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBe(newAccess);
+    const state = useAuthStore.getState();
+    expect(state.isLoggedIn).toBe(true);
+    expect(state.accessToken).toBe(newAccess);
+    expect(state.user?.sub).toBe("auth0|refreshed");
+    expect(state.user?.userID).toBe("refreshed");
+  });
+
+  it("rotates the refresh token when the response includes a new one", async () => {
+    await secureStorage.set(TOKEN_KEYS.refresh, "OLD-REFRESH");
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        access_token: makeJwt({ sub: "x", exp: FUTURE_EXP }),
+        refresh_token: "NEW-REFRESH",
+      }),
+    })) as unknown as typeof fetch;
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
+
+    await authService.refresh();
+
+    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBe("NEW-REFRESH");
+  });
+
+  it("preserves the existing store user (merging the new sub) on refresh", async () => {
+    // Seed a logged-in user; refresh should merge claims.sub onto it.
+    useAuthStore.setState({
+      isLoggedIn: true,
+      accessToken: "old",
+      user: {
+        sub: "auth0|original",
+        userID: "original",
+        name: "Existing User",
+        email: "existing@x.com",
+        picture: "https://existing/pic.png",
+      },
+    });
+    await secureStorage.set(TOKEN_KEYS.refresh, "OLD-REFRESH");
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ access_token: makeJwt({ sub: "auth0|newsub", exp: FUTURE_EXP }) }),
+    })) as unknown as typeof fetch;
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
+
+    await authService.refresh();
+
+    const user = useAuthStore.getState().user;
+    expect(user?.name).toBe("Existing User"); // preserved from prior user
+    expect(user?.sub).toBe("auth0|newsub"); // overwritten with new claim sub
+  });
+
+  it("logs out and returns false when the token exchange fails", async () => {
+    useAuthStore.setState({ isLoggedIn: true, accessToken: "old", user: { sub: "s", userID: "s" } });
+    await secureStorage.set(TOKEN_KEYS.access, "old-access");
+    await secureStorage.set(TOKEN_KEYS.refresh, "OLD-REFRESH");
+    global.fetch = jest.fn(async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "invalid_grant",
+    })) as unknown as typeof fetch;
+
+    const ok = await authService.refresh();
+
+    expect(ok).toBe(false);
+    // logout() cleared local session + tokens.
+    expect(useAuthStore.getState().isLoggedIn).toBe(false);
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBeNull();
+    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBeNull();
+  });
+});
+
+// ─── ensureValidToken ────────────────────────────────────────────────────────
+
+describe("authService.ensureValidToken", () => {
+  it("returns false when there is no access token", async () => {
+    expect(await authService.ensureValidToken()).toBe(false);
+  });
+
+  it("returns true when the stored token is still valid (no refresh attempted)", async () => {
+    await secureStorage.set(TOKEN_KEYS.access, makeJwt({ sub: "s", exp: FUTURE_EXP }));
+    const refreshSpy = jest.spyOn(authService, "refresh");
+    expect(await authService.ensureValidToken()).toBe(true);
+    expect(refreshSpy).not.toHaveBeenCalled();
+    refreshSpy.mockRestore();
+  });
+
+  it("delegates to refresh when the stored token is expired", async () => {
+    await secureStorage.set(TOKEN_KEYS.access, makeJwt({ sub: "s", exp: PAST_EXP }));
+    // No refresh token stored → refresh returns false.
+    expect(await authService.ensureValidToken()).toBe(false);
+  });
+});
+
+// ─── logout ────────────────────────────────────────────────────────────────
+
+describe("authService.logout", () => {
+  it("clears the local session and stored tokens", async () => {
+    useAuthStore.setState({
+      isLoggedIn: true,
+      accessToken: "a",
+      user: { sub: "s", userID: "s" },
+    });
+    await secureStorage.set(TOKEN_KEYS.access, "a");
+    await secureStorage.set(TOKEN_KEYS.refresh, "r");
+
+    await authService.logout();
+
+    const state = useAuthStore.getState();
+    expect(state.isLoggedIn).toBe(false);
+    expect(state.accessToken).toBeNull();
+    expect(state.user).toBeNull();
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBeNull();
+    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBeNull();
+  });
+});

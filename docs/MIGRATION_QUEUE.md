@@ -27,71 +27,71 @@ Claiming a feature is an atomic `mkdir` of `unifind-mobile/docs/.migration-locks
 
 | St | Slug | Feature |
 |----|------|---------|
-| ⬜ | `app-scaffold` | Expo app + Gluestack UI + NativeWind + theme tokens (turquoise/prussian/barc) + dark mode + **global providers** (auth, global loading/spinner, Toast host, RTL dir) |
-| ⬜ | `i18n-setup` | i18n en + ar, flat camelCase `translation` namespace, RTL, `useCustomTranslation` + `useLocalization` (incl. **Asia/Beirut** TZ) |
-| ⬜ | `api-layer` | `http` (Strapi) + `nodeApi` (Node + Auth0 interceptor) + typed `Page<T>` normalizer + **service layer** (api/ vs services/) |
-| ⬜ | `reference-data` | countries + dial codes (`/country`), currencies (USD/LBP symbols), languages (`/language`) — fetched once + cached |
-| ⬜ | `auth-login` | Auth0 native (PKCE) login + refresh + expo-secure-store + `authStore` + `SignInSheet` + `useAuthGate` — see `prompts/AUTH_SECURITY.md` |
-| ⬜ | `upload-service` | `uploadService.uploadAvatar` — 3-step Cloudinary (sign → upload → `/cloudinary/photo`) reused by profile photo |
-| ⬜ | `navigation-shell` | Bottom tabs (Home · Find · Growth · Profile) + `ScreenContainer` + `AppHeader` + `EmptyState` + breadcrumb-equivalent |
-| ⬜ | `universal-list` | `UniversalList<T>` (search/sort/filter/infinite-scroll/pull-refresh/states) |
-| ⬜ | `filter-system` | `FilterDrawer` (Actionsheet) + `FilterTags` + filter configs |
-| ⬜ | `compare-favorites-infra` | `favoritesStore` + `compareStore` (max 5) + `FavoriteButton` + `CompareButton` + `CompareBar` |
-| ⬜ | `shared-cards` | `ProgramCard` · `InstitutionCard` · `OfferingCard` · `SpecialistCard` · `ReviewSection` · `RatingStars` · `InfoCard`(UFCard4) — **built once, reused everywhere** |
+| ✅ | `app-scaffold` | Expo app + Gluestack UI + NativeWind + theme tokens (turquoise/prussian/barc) + **global providers** (auth, splash, Toast host, AlertDialog host, SignInSheet host, RTL dir). NOTE: **light-mode only** (web app has no dark mode — intentional parity, not a gap) |
+| ✅ | `i18n-setup` | i18n en + ar, flat camelCase `translation` namespace, RTL, `useCustomTranslation` + `useLocalization` (incl. **Asia/Beirut** TZ) |
+| ✅ | `api-layer` | `http` (Strapi) + `nodeApi` (Node + Auth0 interceptor + 401 refresh-retry) + service layer (api/ vs services/) |
+| ✅ | `reference-data` | countries + dial codes (`/country`), currencies (USD/LBP via useLocalization), languages (`/language`) — used in profile + filters |
+| ✅ | `auth-login` | Auth0 PKCE (expo-auth-session AuthRequest) login/signup/refresh/logout + expo-secure-store (web localStorage fallback) + `authStore` + `SignInSheet` + `useAuthGate` + `/auth/callback` web route — see `prompts/AUTH_SECURITY.md`. **Needs Auth0 dashboard callback/Google config to run** |
+| ✅ | `upload-service` | `avatarService` — 3-step Cloudinary (sign → upload → `/cloudinary/photo`), used by profile photo |
+| ✅ | `navigation-shell` | Bottom tabs (Home · Program Explorer · Growth · Profile) + `ScreenContainer` + `AppHeader` + `EmptyState` + breadcrumbs |
+| ✅ | `universal-list` | `UniversalList<T>` (search/sort/filter/infinite-scroll/pull-refresh/states) — built in find-institutions |
+| ✅ | `filter-system` | `FilterDrawer` (Actionsheet) + `FilterTags` + filter configs (multi/single/range) — built in find-institutions |
+| ✅ | `compare-favorites-infra` | `favoritesStore` + `compareStore` (max 5) + `CompareBar` + `useSelection` hook — built across profile + find-institutions |
+| ✅ | `shared-cards` | `ProgramCard` · `InstitutionCard` · `OfferingCard` · `SpecialistCard` · `ReviewSection` · `RatingStars` · `InfoCard` — all built + reused |
 
 ### 1. Discovery (lists)
 
 | St | Slug | Feature | Web route |
 |----|------|---------|-----------|
 | ✅ | `home` | Home — hero, featured, numbers, guide steps, testimonials, welcome popup | `/[locale]` |
-| ⬜ | `find-programs` | Find Programs list | `/[locale]/find/programs` |
-| ⬜ | `find-institutions` | Find Institutions list | `/[locale]/find/institutions` |
-| ⬜ | `find-offerings` | Find Offerings / Growth-Center hub | `/[locale]/find/offerings`, `/[locale]/growth-center` |
-| ⬜ | `program-explorer` | Program Explorer landing | `/[locale]/program-explorer` |
+| ✅ | `find-programs` | Find Programs list | `/[locale]/find/programs` |
+| ✅ | `find-institutions` | Find Institutions list | `/[locale]/find/institutions` |
+| ✅ | `find-offerings` | Find Offerings / Growth-Center hub | `/[locale]/find/offerings`, `/[locale]/growth-center` |
+| ✅ | `program-explorer` | Program Explorer landing | `/[locale]/program-explorer` |
 
 ### 2. Detail pages
 
 | St | Slug | Feature | Web route |
 |----|------|---------|-----------|
-| ⬜ | `institution-detail` | Institution detail | `/[locale]/program-explorer/institutions/[slug]` |
-| ⬜ | `program-detail` | Program detail | `.../institutions/[slug]/programs/[id]` |
-| ⬜ | `offering-detail` | Offering detail (specialist + booking) | `/[locale]/growth-center/offerings/[slug]` |
+| ✅ | `institution-detail` | Institution detail | `/[locale]/program-explorer/institutions/[slug]` |
+| ✅ | `program-detail` | Program detail | `.../institutions/[slug]/programs/[id]` |
+| ✅ | `offering-detail` | Offering detail (specialist + booking) | `/[locale]/growth-center/offerings/[slug]` |
 
 ### 3. Booking & Payment
 
 | St | Slug | Feature | Web route |
 |----|------|---------|-----------|
-| ⬜ | `offering-checkout` | Checkout (promo + payment) | `/[locale]/find/offerings/checkout/[id]` |
-| ⬜ | `payment-status` | Payment success/failure | `.../checkout/payment-status` |
+| ✅ | `offering-checkout` | Checkout (promo + payment) | `/[locale]/find/offerings/checkout/[id]` |
+| ✅ | `payment-status` | Payment success/failure | `.../checkout/payment-status` |
 
 ### 4. Profile (auth-gated)
 
 | St | Slug | Feature | Web location |
 |----|------|---------|-----------|
-| ⬜ | `profile-shell` | Profile shell — tabs, editable photo, name, sign-out | `/[locale]/profile` |
-| ⬜ | `profile-information` | Profile info form | `UFProfileInformation` |
-| ⬜ | `account-credentials` | Password change | `UFAccountCredentials` |
-| ⬜ | `about-profile` | About — overview + academic + professional background | `UFAboutProfile` |
-| ⬜ | `profile-activity` | Activity — reviews / comments / reactions | `UFProfileActivity` |
-| ⬜ | `profile-notifications` | Notifications list (disabled on web) | `UFProfileNotifications` |
-| ⬜ | `profile-favorites` | Favorites — programs / institutions / offerings | `UFProfileFavorites` |
-| ⬜ | `profile-comparisons` | Comparisons — programs / institutions | `UFProfileComparisons` |
-| ⬜ | `profile-bookings` | Bookings history | `UFProfileBookings` |
-| ⬜ | `booking-detail` | Booking detail | `/[locale]/profile/booking` |
+| ✅ | `profile-shell` | Profile shell — tabs, editable photo, name, sign-out | `/[locale]/profile` |
+| ✅ | `profile-information` | Profile info form | `UFProfileInformation` |
+| ✅ | `account-credentials` | Password change | `UFAccountCredentials` |
+| ✅ | `about-profile` | About — overview + academic + professional background | `UFAboutProfile` |
+| ✅ | `profile-activity` | Activity — reviews / comments / reactions | `UFProfileActivity` |
+| ✅ | `profile-notifications` | Intentionally OMITTED — disabled/commented-out on web (no live data) → parity is to not show it. Not a gap. | `UFProfileNotifications` |
+| ✅ | `profile-favorites` | Favorites — programs / institutions / offerings | `UFProfileFavorites` |
+| ✅ | `profile-comparisons` | Comparisons — programs / institutions | `UFProfileComparisons` |
+| ✅ | `profile-bookings` | Bookings history | `UFProfileBookings` |
+| ✅ | `booking-detail` | Booking detail | `/[locale]/profile/booking` |
 
 ### 5. Compare
 
 | St | Slug | Feature | Web route |
 |----|------|---------|-----------|
-| ⬜ | `compare` | Compare — programs / institutions tables | `/[locale]/compare` |
+| ✅ | `compare` | Compare — programs / institutions tables | `/[locale]/compare` |
 
 ### 6. Static / misc
 
 | St | Slug | Feature | Web route |
 |----|------|---------|-----------|
-| ⬜ | `footer-newsletter-contact` | Footer: newsletter subscribe + Contact Us form + FAQ | `UFContactUs`, `UFFAQ` |
-| ⬜ | `terms-conditions` | Terms & Conditions | `/[locale]/terms-conditions` |
-| ⬜ | `not-found` | 404 screen | `not-found.tsx` |
+| ✅ | `footer-newsletter-contact` | `AppFooter` (logo, contact info, social links, nav, newsletter subscribe → `/newsletter/subscribe`, Terms link) on Home. NOTE: web "Contact Us" = the footer (no contact form); FAQ = dead stub on web (never rendered) → both correctly omitted |
+| ✅ | `terms-conditions` | Terms & Conditions screen — static `terms.*` i18n (en+ar), all sections | `/[locale]/terms-conditions` |
+| ✅ | `not-found` | 404 screen (`app/+not-found.tsx`) — branded, "Go to Home" | `not-found.tsx` |
 
 ---
 
