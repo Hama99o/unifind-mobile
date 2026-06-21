@@ -116,9 +116,9 @@ export function SelectField({
             </Text>
           </View>
           {isLoading ? (
-            <Spinner size="small" className="text-muted-foreground" />
+            <Spinner size="small" />
           ) : (
-            <ChevronDown size={16} color={colors.muted} />
+            <ChevronDown size={16} color={colors.mutedForeground} />
           )}
         </Pressable>
       </View>

@@ -17,6 +17,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withDelay,
   Easing,
 } from "react-native-reanimated";
 import {
@@ -53,10 +54,8 @@ function StaggeredRow({
   }));
 
   useEffect(() => {
-    setTimeout(() => {
-      opacity.value = withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) });
-      translateY.value = withTiming(0, { duration: 380, easing: Easing.out(Easing.quad) });
-    }, delay);
+    opacity.value = withDelay(delay, withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) }));
+    translateY.value = withDelay(delay, withTiming(0, { duration: 380, easing: Easing.out(Easing.quad) }));
   }, []);
 
   // NOTE: NativeWind className (flex-row/gap) does NOT apply to reanimated

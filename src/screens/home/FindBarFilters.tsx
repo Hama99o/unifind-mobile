@@ -170,12 +170,12 @@ export function FindBarFilters({
       {activeTab === "offering" && (
         <>
           <Input className="rounded-xl border-border" style={{ height: 52 }}>
-            <InputSlot className="pl-3">
+            <InputSlot className="ps-3">
               <Search size={16} color={colors.foreground} />
             </InputSlot>
             <InputField
               placeholder={t("searchPlaceholder")}
-              placeholderTextColor={colors.muted}
+              placeholderTextColor={colors.mutedForeground}
               value={offeringValues.search}
               onChangeText={(v) => onOfferingChange({ search: v })}
             />

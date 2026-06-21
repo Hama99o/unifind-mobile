@@ -29,6 +29,7 @@ import { FeaturedInstitutionsSection } from "@/screens/home/FeaturedInstitutions
 import { TestimonialsSection } from "@/screens/home/TestimonialsSection";
 import { WelcomeModal } from "@/screens/home/WelcomeModal";
 import { HomeSkeleton } from "@/screens/home/HomeSkeleton";
+import { AppFooter } from "@/components/shared/AppFooter";
 import { fetchFeaturedOfferings, fetchFeaturedInstitutions } from "@/api/catalog";
 import { fetchTestimonials } from "@/services/testimonialsService";
 
@@ -100,6 +101,8 @@ export default function HomeScreen() {
         <NumbersSection />
         <FeaturedInstitutionsSection />
         <TestimonialsSection />
+        {/* Footer — mirrors web UFContactUs (logo, contact, socials, nav, newsletter) */}
+        <AppFooter />
         {/* Bottom breathing room above tab bar */}
         <View className="h-8" />
       </ScrollView>

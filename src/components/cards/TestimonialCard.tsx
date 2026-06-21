@@ -14,11 +14,8 @@
 
 import { View, Image } from "react-native";
 import { Pressable } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
+import { usePressScale } from "@/hooks/usePressScale";
 import { GradientView } from "@/components/shared/GradientView";
 import { Quote, ChevronRight, ChevronLeft } from "lucide-react-native";
 import { Text } from "@/components/ui/text";
@@ -26,7 +23,7 @@ import { Heading } from "@/components/ui/heading";
 import { RatingStars } from "@/components/cards/RatingStars";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
-import { brand } from "@/config/theme";
+import { brand, SHADOW_COLOR } from "@/config/theme";
 
 export interface TestimonialCardProps {
   imageUrl: string;
@@ -48,20 +45,18 @@ export function TestimonialCard({
   const colors = useColors();
   const ArrowIcon = isRtl ? ChevronLeft : ChevronRight;
 
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const handlePressIn = () => { scale.value = withTiming(0.97, { duration: 100 }); };
-  const handlePressOut = () => { scale.value = withTiming(1, { duration: 150 }); };
+  const { animStyle, handlePressIn, handlePressOut } = usePressScale();
 
   return (
     <Animated.View
       style={[animStyle, {
-        shadowColor: "#000",
+        shadowColor: SHADOW_COLOR,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.10,
         shadowRadius: 12,
         elevation: 4,
-        marginRight: 12,
+        marginRight: isRtl ? 0 : 12,
+        marginLeft: isRtl ? 12 : 0,
       }]}
     >
       <Pressable
@@ -105,12 +100,12 @@ export function TestimonialCard({
           {/* Rating row — stars prominent */}
           <View className={`flex-row items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
             <RatingStars value={rating} size={14} />
-            <Text className="text-xs font-bold text-accent">{rating.toFixed(1)}</Text>
+            <Text className="text-xs font-bold text-foreground">{rating.toFixed(1)}</Text>
           </View>
 
           {/* Quote */}
           <View className={`flex-row items-start gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
-            <Quote size={12} color={colors.muted} style={{ marginTop: 2, flexShrink: 0 }} />
+            <Quote size={12} color={colors.mutedForeground} style={{ marginTop: 2, flexShrink: 0 }} />
             <Text
               className={`text-xs text-muted-foreground italic leading-relaxed flex-1 ${isRtl ? "text-right" : ""}`}
               numberOfLines={3}

@@ -1,18 +1,79 @@
-import axios from "axios";
-import { useAuthStore } from "@/stores/authStore";
-
 /**
  * Node API (user-owned data): bookings, favorites, compares, reviews,
  * payments, userinfo, academic/professional background, skills.
- * The Auth0 access token is attached per request from the auth store.
+ *
+ * Auth0 access token is attached per request from the auth store.
+ * On 401: attempt a silent token refresh (via injected refreshFn from authService),
+ *         then retry once. If refresh fails, sign out.
  */
+
+import axios, { type AxiosRequestConfig } from "axios";
+import { useAuthStore } from "@/stores/authStore";
+import { secureStorage, TOKEN_KEYS } from "@/utils/secure-storage";
+
+// Extend AxiosRequestConfig to track retry state
+interface RetryableRequestConfig extends AxiosRequestConfig {
+  _retried?: boolean;
+}
+
 export const nodeApi = axios.create({
   baseURL: process.env.EXPO_PUBLIC_NODE_API_URL,
   headers: { "Content-Type": "application/json" },
 });
+
+// ─── Request interceptor — attach access token ─────────────────────────────────
 
 nodeApi.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// ─── Refresh function injector (avoids circular dep with authService) ──────────
+// authService registers its refresh fn here at module load.
+
+let _nodeApiRefreshFn: (() => Promise<boolean>) | null = null;
+
+export function registerNodeApiRefreshFn(fn: () => Promise<boolean>) {
+  _nodeApiRefreshFn = fn;
+}
+
+// ─── Response interceptor — 401 → refresh-and-retry ───────────────────────────
+
+nodeApi.interceptors.response.use(
+  (response) => response,
+  async (error: unknown) => {
+    const axiosError = error as { response?: { status?: number }; config?: RetryableRequestConfig };
+    const originalRequest = axiosError.config;
+
+    if (
+      axiosError.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retried &&
+      useAuthStore.getState().isLoggedIn
+    ) {
+      originalRequest._retried = true;
+
+      if (_nodeApiRefreshFn) {
+        try {
+          const refreshed = await _nodeApiRefreshFn();
+          if (refreshed) {
+            const newToken = await secureStorage.get(TOKEN_KEYS.access);
+            if (newToken) {
+              originalRequest.headers = originalRequest.headers ?? {};
+              (originalRequest.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
+            }
+            return nodeApi(originalRequest);
+          }
+        } catch {
+          // Refresh threw — fall through to sign out
+        }
+      }
+
+      // Refresh failed — sign out
+      await useAuthStore.getState().logout();
+    }
+
+    return Promise.reject(error);
+  }
+);

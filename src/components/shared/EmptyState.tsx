@@ -14,7 +14,7 @@ export function EmptyState({
   const colors = useColors();
   return (
     <Center className="flex-1 gap-2 px-8 py-16">
-      <Inbox size={48} color={colors.muted} />
+      <Inbox size={48} color={colors.mutedForeground} />
       <Heading size="md" className="text-center">
         {title}
       </Heading>

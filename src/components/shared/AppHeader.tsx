@@ -15,7 +15,13 @@ export function AppHeader({ title, showBack }: { title: string; showBack?: boole
   return (
     <View className="flex-row items-center gap-2 px-4 py-3 border-b border-border bg-background">
       {showBack && (
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button">
+        <Pressable
+          onPress={() => router.back()}
+          // p-1 pads the visual chrome; hitSlop expands the touch area to ≥44px
+          className="p-1"
+          hitSlop={14}
+          accessibilityRole="button"
+        >
           <BackIcon size={26} color={colors.foreground} />
         </Pressable>
       )}

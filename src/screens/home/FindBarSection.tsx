@@ -35,7 +35,7 @@ import { HomeAppBar } from "@/components/shared/HomeAppBar";
 import { FindBarFilters, type ActiveTab, type ProgramValues, type InstitutionValues, type OfferingValues } from "@/screens/home/FindBarFilters";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
-import { brand } from "@/config/theme";
+import { brand, SHADOW_COLOR } from "@/config/theme";
 
 const SEGMENT_COUNT = 3;
 
@@ -90,23 +90,28 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
 
   const handleFind = () => {
     if (activeTab === "program") {
+      // Programs → FindScreen with sub-tab=programs + optional filters
       const p = new URLSearchParams();
+      p.set("find", "programs");
       if (programValues.level) p.set("level", programValues.level);
       if (programValues.field) p.set("field", programValues.field);
       if (programValues.location) p.set("location", programValues.location);
-      router.push(`/(main)/(tabs)/program-explorer?${p.toString()}`);
+      router.push(`/(main)/find?${p.toString()}` as never);
     } else if (activeTab === "institution") {
+      // Institutions → FindScreen with sub-tab=institutions + optional filters
       const p = new URLSearchParams();
+      p.set("find", "institutions");
       if (institutionValues.level) p.set("level", institutionValues.level);
       if (institutionValues.field) p.set("field", institutionValues.field);
       if (institutionValues.location) p.set("location", institutionValues.location);
-      router.push(`/(main)/(tabs)/program-explorer?${p.toString()}`);
+      router.push(`/(main)/find?${p.toString()}` as never);
     } else {
+      // Offerings → Growth Center hub
       const p = new URLSearchParams();
       if (offeringValues.search) p.set("search", offeringValues.search);
       if (offeringValues.field) p.set("field", offeringValues.field);
       if (offeringValues.category) p.set("category", offeringValues.category);
-      router.push(`/(main)/(tabs)/growth-center?${p.toString()}`);
+      router.push(`/(main)/(tabs)/growth-center?${p.toString()}` as never);
     }
   };
 
@@ -160,7 +165,7 @@ export function FindBarSection({ onLanguageToggle, onProfilePress }: FindBarSect
         {/* Floating search card — consistent horizontal margin (px-5 matches hero) */}
         <View
           className="bg-card rounded-3xl overflow-hidden"
-          style={{ shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 20, elevation: 12 }}
+          style={{ shadowColor: SHADOW_COLOR, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 20, elevation: 12 }}
         >
           {/* Segmented control */}
           <View

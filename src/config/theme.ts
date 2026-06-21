@@ -1,3 +1,8 @@
+/** Pure-black shadow tint for drop shadows (must not be foreground/prussian). */
+export const SHADOW_COLOR = "#000000";
+/** Semi-transparent scrim for camera/avatar overlay bands. */
+export const SCRIM_45 = "rgba(0,0,0,0.45)";
+
 /** unifind brand palette (mirrors unifind/frontend/tailwind.config.js). */
 export const brand = {
   prussian: "#023055",
@@ -12,6 +17,8 @@ export const brand = {
 export interface AppColors {
   background: string;
   foreground: string;
+  /** Soft text/icon color for secondary/metadata — matches `text-muted-foreground` CSS token. */
+  mutedForeground: string;
   muted: string;
   border: string;
   primary: string;
@@ -31,7 +38,8 @@ export interface AppColors {
 export const lightColors: AppColors = {
   background: "#ffffff",
   foreground: "#023055",
-  muted: "#6B7785",
+  mutedForeground: "#6B7785",
+  muted: "#F1F3F5",
   border: "#DCE3EB",
   primary: brand.prussian,
   primaryForeground: "#ffffff",
@@ -44,7 +52,8 @@ export const lightColors: AppColors = {
 export const darkColors: AppColors = {
   background: "#0A1722",
   foreground: "#FAFAFA",
-  muted: "#9AA8B5",
+  mutedForeground: "#9AA8B5",
+  muted: "#162231",
   border: "#243240",
   primary: brand.turquoise,
   primaryForeground: brand.prussian,

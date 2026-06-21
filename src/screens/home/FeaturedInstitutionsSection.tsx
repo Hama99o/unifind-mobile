@@ -34,7 +34,7 @@ const CARD_GAP = 12;
 const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
 
 export function FeaturedInstitutionsSection() {
-  const { t, lang } = useCustomTranslation();
+  const { t, lang, isRtl } = useCustomTranslation();
   const colors = useColors();
   const locale = lang === "ar" ? "ar" : "en";
   const router = useRouter();
@@ -68,7 +68,7 @@ export function FeaturedInstitutionsSection() {
         <View className="pt-7 pb-6">
           <SectionHeader
             titleKey="featuredInstitutions"
-            onSeeAll={() => router.push("/(main)/(tabs)/program-explorer")}
+            onSeeAll={() => router.push("/(main)/find?find=institutions" as never)}
             onDark
             className="px-4"
           />
@@ -78,7 +78,7 @@ export function FeaturedInstitutionsSection() {
             snapToInterval={SNAP_INTERVAL}
             decelerationRate="fast"
             snapToAlignment="start"
-            contentContainerStyle={{ paddingLeft: 16, paddingRight: 32 }}
+            contentContainerStyle={isRtl ? { paddingRight: 16, paddingLeft: 32 } : { paddingLeft: 16, paddingRight: 32 }}
           >
             {institutions.map((inst: FeaturedInstitution) => (
               <FeaturedCard

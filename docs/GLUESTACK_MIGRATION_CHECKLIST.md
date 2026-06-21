@@ -13,7 +13,7 @@ Tick a box when the component has been added to `src/components/ui/` and verifie
 - [ ] HStack
 - [ ] VStack
 - [ ] Center
-- [ ] Divider
+- [x] Divider           ← institution-detail (simple h-px bg-border wrapper)
 - [ ] Pressable
 - [ ] Text
 - [ ] Heading
@@ -22,23 +22,23 @@ Tick a box when the component has been added to `src/components/ui/` and verifie
 - [x] Spinner
 
 ## Inputs & forms
-- [ ] Button
+- [x] Button            ← institution-detail (HeroDetailCard, ReviewForm action buttons)
 - [x] Input
-- [ ] Textarea
+- [x] Textarea
 - [ ] Select
-- [ ] Checkbox
+- [x] Checkbox
 - [ ] Radio
 - [ ] Switch
 - [ ] Slider            ← needed for range filters (tuition, duration)
-- [ ] FormControl       ← labels, errors, required markers
+- [x] FormControl       ← institution-detail (custom wrapper; labels, errors, required markers)
 
 ## Surfaces & overlays
 - [ ] Card
-- [ ] Badge
+- [x] Badge             ← institution-detail/academic section (small label chip)
 - [ ] Avatar
 - [x] Actionsheet       ← FilterDrawer, SignInSheet, sort/option pickers, UFBottomSheet equivalent
 - [ ] Modal
-- [ ] AlertDialog       ← confirmAlert helper (never raw Alert.alert)
+- [x] AlertDialog       ← confirmAlert helper (never raw Alert.alert)
 - [ ] Toast             ← errors / success feedback
 - [ ] Accordion         ← accordion filters, FAQ sections
 - [ ] Popover / Tooltip
@@ -49,24 +49,25 @@ Tick a box when the component has been added to `src/components/ui/` and verifie
 - [ ] Skeleton                  ← loading states (compose if not first-class)
 
 ## App-specific compositions (built on the above — track here too)
-- [ ] ScreenContainer
-- [ ] AppHeader
-- [ ] EmptyState
-- [ ] UniversalList
+- [x] ScreenContainer
+- [x] AppHeader
+- [x] EmptyState
+- [x] UniversalList    ← find-institutions (generic, reusable for all list screens)
 - [x] SelectField       ← single-select Actionsheet-based picker (DRY; reused by filters)
-- [ ] FilterDrawer
-- [ ] FilterTags
-- [ ] SignInSheet
+- [x] FilterDrawer      ← find-institutions (multiSelect, singleSelect, accordion)
+- [x] FilterTags        ← find-institutions (removable chips)
+- [x] SignInSheet
 - [ ] FavoriteButton
 - [ ] CompareButton
-- [ ] CompareBar
+- [x] CompareBar        ← find-institutions (generic for Institution/Program)
+- [x] SubNavBar         ← find-institutions (Programs | Institutions | Offerings)
 - [ ] ProgramCard
-- [ ] InstitutionCard
+- [x] InstitutionCard   ← updated with ranking badges, rating, fees parity
 - [ ] OfferingCard
 - [ ] SpecialistCard
-- [ ] ReviewSection
-- [ ] RatingStars
+- [x] ReviewSection     ← institution-detail (distribution bars, category cards, paginated reviews)
+- [x] RatingStars
 - [ ] DayTimeSlots
-- [ ] confirmAlert (helper over AlertDialog)
+- [x] confirmAlert (helper over AlertDialog)
 
 > Keep this list current. A screen that hand-rolls a primitive instead of adding the Gluestack one is a bug — add it here and use it.
