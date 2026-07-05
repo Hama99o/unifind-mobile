@@ -1,3 +1,7 @@
+// Installed before any other import so it's armed before anything can throw.
+import { installCrashReporter, onCrash } from "@/utils/crashReporter";
+installCrashReporter();
+
 // Relative path (NOT the @/ alias) so NativeWind's Metro transformer reliably
 // matches this import against its configured input ("./src/styles/global.css")
 // and injects the compiled styles on native. Mirrors the working Hatiwal app.
@@ -7,6 +11,8 @@ import "@/i18n";
 import "@/services/authService";
 
 import { useEffect, useState } from "react";
+import { CrashScreen } from "@/components/shared/CrashScreen";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { View, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
@@ -74,30 +80,41 @@ function BootstrapOverlay() {
 
 export default function RootLayout() {
   const bootstrap = useAuthStore((s) => s.bootstrap);
+  const [fatalError, setFatalError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    onCrash((error, isFatal) => {
+      if (isFatal) setFatalError(error);
+    });
+  }, []);
 
   useEffect(() => {
     bootstrap();
   }, [bootstrap]);
 
+  if (fatalError) return <CrashScreen error={fatalError} />;
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="auto" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(main)" />
-            <Stack.Screen name="auth/callback" />
-          </Stack>
-          {/* Bootstrap splash: blocks interaction while session hydrates */}
-          <BootstrapOverlay />
-          {/* Global overlays — mounted once, accessible from anywhere */}
-          <ToastHost />
-          <AlertDialogHost />
-          <SignInSheetHost />
-          <AppServices />
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style="auto" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(main)" />
+              <Stack.Screen name="auth/callback" />
+            </Stack>
+            {/* Bootstrap splash: blocks interaction while session hydrates */}
+            <BootstrapOverlay />
+            {/* Global overlays — mounted once, accessible from anywhere */}
+            <ToastHost />
+            <AlertDialogHost />
+            <SignInSheetHost />
+            <AppServices />
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 
