@@ -9,7 +9,7 @@
  */
 
 import { useState } from "react";
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
 import { BookOpen, Building2, Layers } from "lucide-react-native";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { SegmentedPill } from "@/components/common/SegmentedPill";
@@ -25,16 +25,11 @@ export function FavoritesTab() {
 
   return (
     <View className="flex-1">
-      {/* §2: horizontal ScrollView for pills, RTL-safe, gap:8 */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          gap: 8,
-          flexDirection: isRtl ? "row-reverse" : "row",
-        }}
+      {/* Sub-tab bar — wrapping row (not a horizontal ScrollView, whose default
+          cross-axis stretch blew the pills into full-height cards). RTL-safe. */}
+      <View
+        className="flex-row flex-wrap items-center gap-2 px-4 py-2"
+        style={{ flexDirection: isRtl ? "row-reverse" : "row" }}
       >
         <SegmentedPill
           label={t("programs")}
@@ -54,7 +49,7 @@ export function FavoritesTab() {
           active={activeTab === "offerings"}
           onPress={() => setActiveTab("offerings")}
         />
-      </ScrollView>
+      </View>
 
       {/* Tab content — each tab scrolls internally */}
       <View className="flex-1">

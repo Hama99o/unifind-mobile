@@ -15,6 +15,13 @@
  */
 
 import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useState,
+  type ReactElement,
+} from "react";
+import {
   TextInput,
   View,
   type TextInputProps,
@@ -62,17 +69,40 @@ export interface InputProps extends ViewProps {
 }
 
 export function Input({ className, variant = "outline", children, ...props }: InputProps) {
+  const [focused, setFocused] = useState(false);
+
+  // Inject focus tracking into the InputField child so the container border
+  // highlights on focus (the mobile equivalent of web's input focus/hover ring).
+  const enhanced = Children.map(children, (child) => {
+    if (isValidElement(child) && child.type === InputField) {
+      const el = child as ReactElement<InputFieldProps>;
+      const overrides: Partial<InputFieldProps> = {
+        onFocus: (e) => {
+          setFocused(true);
+          el.props.onFocus?.(e);
+        },
+        onBlur: (e) => {
+          setFocused(false);
+          el.props.onBlur?.(e);
+        },
+      };
+      return cloneElement(el, overrides);
+    }
+    return child;
+  });
+
   return (
     <View
       className={cn(
         "flex-row items-center rounded-xl overflow-hidden",
-        variant === "outline" && "border border-border bg-muted/30",
+        variant === "outline" &&
+          (focused ? "border border-primary bg-background" : "border border-border bg-muted/30"),
         variant === "filled" && "bg-muted",
         className
       )}
       {...props}
     >
-      {children}
+      {enhanced}
     </View>
   );
 }

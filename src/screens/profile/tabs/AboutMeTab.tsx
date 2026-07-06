@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { SegmentedPill } from "@/components/common/SegmentedPill";
 import { OverviewSection } from "./about/OverviewSection";
@@ -27,16 +27,13 @@ export function AboutMeTab() {
 
   return (
     <View className="flex-1">
-      {/* Sub-tab bar — shared SegmentedPill (no icon), horizontal scroll, RTL */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          gap: 8,
-          flexDirection: isRtl ? "row-reverse" : "row",
-        }}
+      {/* Sub-tab bar — shared SegmentedPill (no icon), wrapping row, RTL.
+          A plain items-center row (not a horizontal ScrollView) keeps the pills
+          at their natural height; the ScrollView's default cross-axis stretch
+          was blowing the pills up into full-height cards on the New Arch. */}
+      <View
+        className="flex-row flex-wrap items-center gap-2 px-4 py-2"
+        style={{ flexDirection: isRtl ? "row-reverse" : "row" }}
       >
         {SUB_TABS.map((tab) => (
           <SegmentedPill
@@ -46,7 +43,7 @@ export function AboutMeTab() {
             onPress={() => setActive(tab.id)}
           />
         ))}
-      </ScrollView>
+      </View>
 
       {/* Content */}
       <View className="flex-1">
