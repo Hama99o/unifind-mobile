@@ -1,27 +1,30 @@
 /**
- * authService — Auth0 PKCE flow orchestration (canonical expo-auth-session).
+ * authService — Auth0 login orchestration, mirroring the web app.
  *
- * Uses expo-auth-session's built-in AuthRequest which manages PKCE code verifier,
- * code challenge, and state internally — no hand-rolled SHA-256/base64.
+ * The shared Auth0 client is CONFIDENTIAL (requires the client secret), so the
+ * app cannot exchange the code itself — a phone must never hold a secret. So we
+ * only obtain the authorization `code` in-app, then hand it to the hosted
+ * auth-service broker, which does the secret-backed exchange server-side (same
+ * as web). See AUTH_SECURITY.md §2 and the memory `mobile-auth-uses-broker`.
  *
  * Flow:
- *   1. new AuthRequest({ ... , usePKCE: true })
- *   2. request.promptAsync(discovery) — opens browser; handles popup on web, in-app browser on native
- *   3. On success, exchangeCodeAsync({ code, codeVerifier: request.codeVerifier! }, discovery)
- *   4. Store tokens, decode idToken, setSession, merge from Node /userinfo
+ *   1. new AuthRequest({ ..., usePKCE: false })   // confidential server exchange
+ *   2. request.promptAsync(discovery) — opens the in-app browser (native)
+ *      + a Linking deep-link fallback (getAuthCode) to catch the redirect
+ *   3. POST { code, redirect_uri } → `${EXPO_PUBLIC_AUTH_URL}/api/google-signin`
+ *      → broker returns { access_token, user, user_metadata }
+ *   4. Store access token, build user, setSession, merge from Node /userinfo
  *
- * Web redirect: ${origin}/auth/callback — stable popup URL.
- * Native redirect: unifind://auth/callback
+ * Native redirect: unifind://auth/callback (standalone) / exp://… (Expo Go).
  *
- * Auth0 dashboard must allow:
- *   Allowed Callback URLs: http://localhost:3010/auth/callback, unifind://auth/callback
- *   Allowed Logout URLs:   http://localhost:3010, unifind://auth/callback
- *
- * See AUTH_SECURITY.md §2-§5.
+ * Auth0 dashboard must allow (already registered on the confidential client):
+ *   Allowed Callback URLs: unifind://auth/callback (+ the exp:// URL in Expo Go)
+ *   Allowed Logout URLs:   unifind://auth/callback
  */
 
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 import { Platform } from "react-native";
 import { useAuthStore, registerRefreshFn, registerHydrateUserFn } from "@/stores/authStore";
 import { nodeApi, registerNodeApiRefreshFn } from "@/api/nodeApi";
@@ -40,6 +43,18 @@ const AUTH0_DOMAIN = process.env.EXPO_PUBLIC_AUTH0_DOMAIN as string;
 const AUTH0_CLIENT_ID = process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID as string;
 const AUTH0_AUDIENCE = process.env.EXPO_PUBLIC_AUTH0_AUDIENCE as string;
 
+/**
+ * The hosted auth broker (the same "auth-service" the web app uses, e.g.
+ * https://auth-stg.unifind-lb.org). The Auth0 client is CONFIDENTIAL — its
+ * token exchange requires the client secret, which a mobile app must never
+ * hold. So, exactly like web, we hand the authorization `code` to the broker's
+ * `/api/google-signin` endpoint; it performs the code→token exchange
+ * server-side (with the secret) and returns the access token to us.
+ */
+const AUTH_BROKER_URL = (
+  process.env.EXPO_PUBLIC_AUTH_URL as string | undefined
+)?.replace(/\/+$/, "");
+
 /** Auth0 OpenID Connect discovery document (standard endpoints). */
 const discovery: AuthSession.DiscoveryDocument = {
   authorizationEndpoint: `https://${AUTH0_DOMAIN}/authorize`,
@@ -48,7 +63,9 @@ const discovery: AuthSession.DiscoveryDocument = {
   endSessionEndpoint: `https://${AUTH0_DOMAIN}/v2/logout`,
 };
 
-const SCOPES = ["openid", "profile", "email", "offline_access"];
+// Match the web broker's scopes. No offline_access: the confidential-client
+// server exchange does not return a refresh token (web runs a 5h session too).
+const SCOPES = ["openid", "profile", "email"];
 
 // ─── Redirect URI ─────────────────────────────────────────────────────────────
 
@@ -139,6 +156,74 @@ export async function fetchNodeUserInfo(): Promise<NodeUserInfo | null> {
   }
 }
 
+// ─── Broker token exchange (confidential client, secret stays server-side) ────
+
+interface BrokerTokenResponse {
+  access_token: string;
+  user?: {
+    sub?: string;
+    name?: string;
+    email?: string;
+    picture?: string;
+  };
+  user_metadata?: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+  } | null;
+}
+
+/**
+ * Exchange the Auth0 authorization `code` for tokens via the hosted broker —
+ * the exact server-side, secret-holding exchange the web app relies on.
+ * Mirrors web's `POST /api/google-signin { code, redirect_uri }`.
+ */
+async function exchangeCodeViaBroker(
+  code: string,
+  redirectUri: string
+): Promise<BrokerTokenResponse> {
+  if (!AUTH_BROKER_URL) {
+    throw new Error(
+      "EXPO_PUBLIC_AUTH_URL is not set — cannot reach the auth service"
+    );
+  }
+
+  const res = await fetch(`${AUTH_BROKER_URL}/api/google-signin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, redirect_uri: redirectUri }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Auth service token exchange failed: ${res.status} ${text}`);
+  }
+
+  const data = (await res.json()) as BrokerTokenResponse;
+  if (!data.access_token) {
+    throw new Error("Auth service returned no access token");
+  }
+  return data;
+}
+
+/** Build the AuthUser from the broker response (userinfo + user_metadata). */
+function buildUserFromBroker(data: BrokerTokenResponse): AuthUser {
+  const sub = data.user?.sub ?? "";
+  const userID = sub.includes("|") ? sub.split("|")[1] : sub;
+  const meta = data.user_metadata ?? {};
+  const fullName =
+    meta.first_name || meta.last_name
+      ? [meta.first_name, meta.last_name].filter(Boolean).join(" ")
+      : data.user?.name;
+  return {
+    sub,
+    userID,
+    name: fullName || undefined,
+    email: data.user?.email ?? meta.email,
+    picture: data.user?.picture,
+  };
+}
+
 // ─── Merge Node /userinfo into AuthUser ───────────────────────────────────────
 
 async function hydrateUserFromNode(base: AuthUser): Promise<AuthUser> {
@@ -189,39 +274,108 @@ async function exchangeRefreshToken(
   return res.json() as Promise<RefreshTokenResponse>;
 }
 
-// ─── Core login / signup flow ─────────────────────────────────────────────────
+// ─── Authorization-code capture (with deep-link fallback) ─────────────────────
 
 /**
- * Runs the Authorization Code + PKCE flow using expo-auth-session's AuthRequest.
- * AuthRequest manages the PKCE code verifier/challenge and state internally —
- * no manual SHA-256 or base64 needed (fixes the unreliable hand-rolled challenge).
- *
- * On web: opens a popup via window.open(); the popup navigates to
- *         ${origin}/auth/callback which calls maybeCompleteAuthSession() to
- *         hand the code back to the opener. No redirect race.
- *
- * On native: opens an in-app browser (SFSafariViewController / Custom Tabs)
- *            which redirects to unifind://auth/callback.
+ * After promptAsync reports a dismiss/cancel, wait this long for a redirect
+ * deep link to still arrive before concluding the user really aborted. Covers
+ * the race where the OS routes the callback to the app slightly *after* the
+ * auth-session browser reports itself dismissed.
  */
-async function performLogin(extraParams?: Record<string, string>): Promise<void> {
-  const redirectUri = getRedirectUri();
+const DEEP_LINK_GRACE_MS = 1200;
 
-  const request = new AuthSession.AuthRequest({
-    clientId: AUTH0_CLIENT_ID,
-    scopes: SCOPES,
-    redirectUri,
-    usePKCE: true,
-    responseType: AuthSession.ResponseType.Code,
-    extraParams: {
-      audience: AUTH0_AUDIENCE,
-      ...extraParams,
-    },
+/**
+ * Parse an Auth0 callback deep link into its authorization `code`, validating
+ * the returned `state` against the request (CSRF protection). Throws on a
+ * state mismatch; returns null when no code is present.
+ */
+function extractCodeFromCallbackUrl(
+  url: string,
+  request: AuthSession.AuthRequest
+): string | null {
+  const params = Linking.parse(url).queryParams ?? {};
+  const returnedState = params.state;
+  if (
+    request.state &&
+    typeof returnedState === "string" &&
+    returnedState !== request.state
+  ) {
+    throw new Error("Auth0 state mismatch — rejecting callback");
+  }
+  const code = params.code;
+  return typeof code === "string" && code ? code : null;
+}
+
+/**
+ * Obtain the Auth0 authorization `code` after the user consents.
+ *
+ * The happy path is `request.promptAsync()` resolving with `type:"success"`.
+ * But on native (both Expo Go and standalone builds) the OS sometimes delivers
+ * the `unifind://…`/`exp://…` redirect deep link to the *app* instead of to the
+ * auth-session browser, so promptAsync resolves with `dismiss` and the code is
+ * silently lost — the exact "I authorised and nothing happened" bug.
+ *
+ * To be robust we register a Linking listener BEFORE opening the browser and
+ * (1) race it against promptAsync, then (2) if promptAsync reports a dismiss,
+ * still wait a short grace period for a late deep link. Either way we validate
+ * `state` against the request to reject any unexpected callback.
+ *
+ * Returns the code, or `null` when the user genuinely cancelled/dismissed.
+ * Throws on an explicit Auth0 error.
+ */
+async function getAuthCode(
+  request: AuthSession.AuthRequest
+): Promise<string | null> {
+  // ── Deep-link fallback listener (native only) ──
+  let linkResolve: ((url: string) => void) | undefined;
+  const linkPromise = new Promise<string>((resolve) => {
+    linkResolve = resolve;
   });
+  const linkSub =
+    Platform.OS !== "web"
+      ? Linking.addEventListener("url", ({ url }) => {
+          if (url && url.includes("code=")) linkResolve?.(url);
+        })
+      : null;
 
-  const result = await request.promptAsync(discovery);
-  if (__DEV__) console.log("[auth] promptAsync.type =", result.type);
+  const closeBrowser = () => {
+    try {
+      WebBrowser.dismissAuthSession();
+    } catch {
+      // no-op
+    }
+  };
 
-  if (result.type !== "success") {
+  try {
+    const promptPromise = request.promptAsync(discovery);
+    // Prevent an unhandled rejection if the deep-link path wins the race and
+    // the (now-orphaned) prompt promise later settles/rejects.
+    promptPromise.catch(() => undefined);
+
+    const winner = await Promise.race([
+      promptPromise.then((result) => ({ kind: "prompt" as const, result })),
+      linkPromise.then((url) => ({ kind: "link" as const, url })),
+    ]);
+
+    // The deep link beat promptAsync — promptAsync likely never got the code.
+    if (winner.kind === "link") {
+      if (__DEV__) console.log("[auth] code captured via deep-link fallback");
+      closeBrowser(); // promptAsync never resolved — close the browser ourselves.
+      return extractCodeFromCallbackUrl(winner.url, request);
+    }
+
+    // promptAsync resolved first.
+    const result = winner.result;
+    if (__DEV__) console.log("[auth] promptAsync.type =", result.type);
+
+    if (result.type === "success") {
+      const code = result.params.code;
+      if (!code) {
+        throw new Error("Authorization code not found in Auth0 callback");
+      }
+      return code;
+    }
+
     if (__DEV__) {
       console.log(
         "[auth] non-success result →",
@@ -232,55 +386,101 @@ async function performLogin(extraParams?: Record<string, string>): Promise<void>
         })
       );
     }
-    // Dismiss / cancel / error — not an app error; just abort silently.
     if (result.type === "error" && result.error) {
       const desc =
         typeof result.error === "object" && result.error !== null
-          ? ((result.error as { description?: string }).description ?? "Unknown Auth0 error")
+          ? ((result.error as { description?: string }).description ??
+            "Unknown Auth0 error")
           : String(result.error);
       throw new Error(`Auth0 error: ${desc}`);
     }
+
+    // dismiss / cancel / locked. This is *also* what promptAsync reports when
+    // the OS delivered the redirect to the app instead of the browser, so give
+    // the deep link a brief grace window before concluding a real cancel.
+    if (Platform.OS !== "web") {
+      const lateUrl = await Promise.race([
+        linkPromise,
+        new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), DEEP_LINK_GRACE_MS)
+        ),
+      ]);
+      if (lateUrl) {
+        if (__DEV__) console.log("[auth] code captured after dismiss (grace)");
+        return extractCodeFromCallbackUrl(lateUrl, request);
+      }
+    }
+
+    // User aborted.
+    return null;
+  } finally {
+    linkSub?.remove();
+  }
+}
+
+// ─── Core login / signup flow ─────────────────────────────────────────────────
+
+/**
+ * Runs the Authorization Code flow, then exchanges the code via the hosted
+ * broker — mirroring the web app exactly.
+ *
+ * Because the Auth0 client is CONFIDENTIAL (its token endpoint requires the
+ * client secret), the app itself cannot exchange the code — a phone must never
+ * hold the secret. So we only obtain the `code` in-app, then hand it to the
+ * broker's `/api/google-signin`, which does the secret-backed exchange
+ * server-side and returns the access token. usePKCE is therefore OFF (the
+ * server-side confidential exchange needs no code_verifier), matching web's
+ * google-signin flow.
+ *
+ * On native: opens an in-app browser (SFSafariViewController / Custom Tabs)
+ *            which redirects to unifind://auth/callback; a deep-link fallback
+ *            (getAuthCode) captures the code even if promptAsync misses it.
+ */
+async function performLogin(extraParams?: Record<string, string>): Promise<void> {
+  const redirectUri = getRedirectUri();
+
+  const request = new AuthSession.AuthRequest({
+    clientId: AUTH0_CLIENT_ID,
+    scopes: SCOPES,
+    redirectUri,
+    usePKCE: false,
+    responseType: AuthSession.ResponseType.Code,
+    extraParams: {
+      audience: AUTH0_AUDIENCE,
+      ...extraParams,
+    },
+  });
+
+  // Build the authorization URL up front so request.state is populated BEFORE
+  // the browser opens. This lets the deep-link fallback below validate state
+  // even when promptAsync never resolves with the code.
+  await request.makeAuthUrlAsync(discovery);
+
+  const code = await getAuthCode(request);
+  if (code === null) {
+    // User cancelled / dismissed — not an app error; abort silently.
     return;
   }
+  if (__DEV__) console.log("[auth] got code, exchanging via auth service…");
 
-  const code = result.params.code;
-  if (!code) {
-    throw new Error("Authorization code not found in Auth0 callback");
-  }
-  if (__DEV__) console.log("[auth] got code, exchanging for tokens…");
-
-  // AuthRequest validated state internally; proceed to token exchange.
-  let tokenResponse: AuthSession.TokenResponse;
+  // Confidential-client exchange happens server-side in the broker (it holds
+  // the secret). We never touch the client secret in the app.
+  let tokenData: BrokerTokenResponse;
   try {
-    tokenResponse = await AuthSession.exchangeCodeAsync(
-      {
-        clientId: AUTH0_CLIENT_ID,
-        code,
-        redirectUri,
-        extraParams: {
-          code_verifier: request.codeVerifier!,
-        },
-      },
-      discovery
-    );
+    tokenData = await exchangeCodeViaBroker(code, redirectUri);
   } catch (e) {
-    if (__DEV__) console.log("[auth] TOKEN EXCHANGE FAILED →", JSON.stringify(e), String(e));
+    if (__DEV__) console.log("[auth] BROKER EXCHANGE FAILED →", String(e));
     throw e;
   }
-  if (__DEV__) console.log("[auth] token exchange OK, hasAccessToken =", !!tokenResponse.accessToken);
+  if (__DEV__) console.log("[auth] exchange OK, hasAccessToken =", !!tokenData.access_token);
 
-  const accessToken = tokenResponse.accessToken;
-  const refreshToken = tokenResponse.refreshToken;
-  const idToken = tokenResponse.idToken;
-
+  const accessToken = tokenData.access_token;
   await secureStorage.set(TOKEN_KEYS.access, accessToken);
-  if (refreshToken) {
-    await secureStorage.set(TOKEN_KEYS.refresh, refreshToken);
-  }
+  // The broker does not return a refresh token (web runs a bounded session too).
 
-  // Prefer idToken for claims (has name/email/picture from OIDC); fall back to accessToken.
-  const claims = decodeJwtPayload(idToken ?? accessToken);
-  const baseUser = buildUserFromClaims(claims);
+  // The broker already returns userinfo + user_metadata; build from that, then
+  // best-effort hydrate from the Node API for the freshest name/avatar.
+  const baseUser = buildUserFromBroker(tokenData);
   const user = await hydrateUserFromNode(baseUser);
 
   await useAuthStore.getState().setSession(accessToken, user);

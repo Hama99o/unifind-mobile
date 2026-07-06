@@ -111,14 +111,19 @@ const PROGRAM_POPULATE = [
   "populate[requirements][fields][1]=info",
   "populate[requirements][fields][2]=icon",
   "populate[specialisations][fields][0]=name",
+  // nbOfYears / nbOfCredits are COMPONENTS ({ min, max }), not scalar fields —
+  // they must be populated, not requested via fields[] (Strapi 400s "Invalid
+  // key nbOfYears" otherwise, which broke the compare + favorites program tabs).
+  "populate[nbOfYears][fields][0]=min",
+  "populate[nbOfYears][fields][1]=max",
+  "populate[nbOfCredits][fields][0]=min",
+  "populate[nbOfCredits][fields][1]=max",
   "fields[0]=id",
   "fields[1]=documentId",
   "fields[2]=slug",
   "fields[3]=name",
   "fields[4]=about",
   "fields[5]=department",
-  "fields[6]=nbOfYears",
-  "fields[7]=nbOfCredits",
   "status=draft",
 ].join("&");
 
@@ -131,23 +136,23 @@ const INSTITUTION_POPULATE = [
   "populate[tuition][fields][1]=maxTuition",
   "populate[tuition][populate][degree][fields][0]=title",
   "populate[ranking][fields][0]=position",
-  "populate[ranking][fields][1]=name",
+  // ranking has no `name` field (it's position/year/url) — requesting it 400s.
   "populate[ranking][populate][organizations][fields][0]=rankingCategory",
   "populate[tags][fields][0]=name",
   "populate[institutionInfo][populate][type][fields][0]=type",
   "populate[institutionInfo][populate][type][fields][1]=icon",
   "populate[institutionInfo][populate][type][fields][2]=iconPrefix",
+  // NB: institution has no scalar `type` field — requesting it 400s the query.
   "fields[0]=id",
   "fields[1]=documentId",
   "fields[2]=slug",
   "fields[3]=name",
   "fields[4]=acronym",
-  "fields[5]=type",
-  "fields[6]=about",
-  "fields[7]=foundationYear",
-  "fields[8]=website",
-  "fields[9]=email",
-  "fields[10]=phone",
+  "fields[5]=about",
+  "fields[6]=foundationYear",
+  "fields[7]=website",
+  "fields[8]=email",
+  "fields[9]=phone",
   "status=draft",
 ].join("&");
 
@@ -156,14 +161,14 @@ const OFFERING_POPULATE = [
   "populate[location][populate][city][fields][0]=name",
   // No populate[languages]: offerings have no `languages` relation — including
   // it makes Strapi 400 "Invalid key languages" (breaks featured/compare/list).
+  // price / duration are NOT Strapi scalar fields on offerings (they come from
+  // the Node offerings API) — requesting them here 400s the whole query.
   "fields[0]=id",
   "fields[1]=documentId",
   "fields[2]=slug",
   "fields[3]=title",
   "fields[4]=description",
-  "fields[5]=price",
-  "fields[6]=duration",
-  "fields[7]=availableOnline",
+  "fields[5]=availableOnline",
   "status=draft",
 ].join("&");
 

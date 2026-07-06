@@ -1,20 +1,16 @@
 # =============================================================================
 # unifind-mobile — Development
 #
-# Dedicated port 3010 (3000 unifind-api · 3007/3008/3098 Hatiwal ·
-# 3009/3099/8081 edu are taken — do not reuse them).
-#
-# WEB (Chrome on this machine, works OFFLINE — no WiFi needed):
-#   docker compose up web
-#   → open http://localhost:3010
-#
-# MOBILE (Expo Go on phone — same WiFi as this machine):
+# MOBILE (Expo Go on phone — requires WiFi, same network as your machine):
 #   HOST_IP=192.168.1.xx docker compose up mobile
-#   → scan the QR with Expo Go
-#   (find your IP: ip route get 1.1.1.1 | grep -oP 'src \K[\d.]+')
+#   → scan the QR code with Expo Go
+#   (find your machine's IP: ip route get 1.1.1.1 | grep -oP 'src \K[\d.]+')
 #
-# Backends: the app talks to the unifind Strapi CMS + Node API (default:
-# staging). Override the EXPO_PUBLIC_* URLs below to point at local backends.
+# There is no `web` service here on purpose — the unifind WEB app is a separate
+# project (../unifind). This repo runs on the phone only.
+#
+# Backends are remote: Node API (user data, staging) + Strapi CMS (catalog) +
+# Auth0 with the hosted auth broker. Values live in the gitignored .env.
 # =============================================================================
 
 x-base: &base
@@ -28,39 +24,36 @@ x-base: &base
   extra_hosts:
     - "host.docker.internal:host-gateway"
 
-x-env: &env
-  # Node API (user data) — staging. Strapi CMS (catalog, read-only) is a SEPARATE
-  # host: cms.unifind.online (staging CMS returns 503; prod CMS serves draft data).
-  EXPO_PUBLIC_NODE_API_URL: ${EXPO_PUBLIC_NODE_API_URL:-https://api-stg.unifind-lb.org/api}
-  EXPO_PUBLIC_STRAPI_API_URL: ${EXPO_PUBLIC_STRAPI_API_URL:-https://cms.unifind.online}
-  EXPO_PUBLIC_STRAPI_BEARER: ${EXPO_PUBLIC_STRAPI_BEARER:-}
-  EXPO_PUBLIC_AUTH0_DOMAIN: ${EXPO_PUBLIC_AUTH0_DOMAIN:-dev-gim0725gfieuvjxt.us.auth0.com}
-  EXPO_PUBLIC_AUTH0_CLIENT_ID: ${EXPO_PUBLIC_AUTH0_CLIENT_ID:-lx7YKrGuk3trDoIhNESkkbxqseU7Nbpr}
-  EXPO_PUBLIC_AUTH0_AUDIENCE: ${EXPO_PUBLIC_AUTH0_AUDIENCE:-https://dev-gim0725gfieuvjxt.us.auth0.com/api/v2/}
-  EXPO_PUBLIC_APP_NAME: UniFind
-  EXPO_PUBLIC_DEFAULT_LANG: en
-  EXPO_PUBLIC_DEFAULT_THEME: system
-  EXPO_NO_TELEMETRY: "1"
-  EXPO_NO_DOCTOR: "1"
-
 services:
-  # ── Web (browser, offline) ────────────────────────────────────────────────
-  web:
-    <<: *base
-    environment:
-      <<: *env
-    ports:
-      - "3010:3010"
-    command: ["npx", "expo", "start", "--web", "--port", "3010", "--offline"]
-
-  # ── Mobile (Expo Go on phone — needs HOST_IP set to your LAN IP) ───────────
+  # ── Mobile (Expo Go on phone) ─────────────────────────────────────────────
+  # Requires HOST_IP set to your machine's LAN/hotspot IP so the phone can reach
+  # Metro. Example: HOST_IP=192.168.1.24 docker compose up mobile
   mobile:
     <<: *base
     stdin_open: true
     tty: true
     environment:
-      <<: *env
-      REACT_NATIVE_PACKAGER_HOSTNAME: ${HOST_IP:-localhost}
+      - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP:-localhost}
+      # Two backends (remote). Catalog = Strapi; user data = Node API (+ Auth0).
+      - EXPO_PUBLIC_NODE_API_URL=${EXPO_PUBLIC_NODE_API_URL:-https://api-stg.unifind-lb.org/api}
+      - EXPO_PUBLIC_STRAPI_API_URL=${EXPO_PUBLIC_STRAPI_API_URL:-https://cms.unifind.online}
+      - EXPO_PUBLIC_STRAPI_BEARER=${EXPO_PUBLIC_STRAPI_BEARER:-}
+      # Auth0 (public client config) + hosted auth broker (server-side token
+      # exchange — the confidential client's secret never touches the app).
+      - EXPO_PUBLIC_AUTH0_DOMAIN=${EXPO_PUBLIC_AUTH0_DOMAIN:-dev-gim0725gfieuvjxt.us.auth0.com}
+      - EXPO_PUBLIC_AUTH0_CLIENT_ID=${EXPO_PUBLIC_AUTH0_CLIENT_ID:-lx7YKrGuk3trDoIhNESkkbxqseU7Nbpr}
+      - EXPO_PUBLIC_AUTH0_AUDIENCE=${EXPO_PUBLIC_AUTH0_AUDIENCE:-https://dev-gim0725gfieuvjxt.us.auth0.com/api/v2/}
+      - EXPO_PUBLIC_AUTH_URL=${EXPO_PUBLIC_AUTH_URL:-https://auth-stg.unifind-lb.org}
+      - EXPO_PUBLIC_APP_NAME=UniFind
+      - EXPO_PUBLIC_DEFAULT_LANG=en
+      - EXPO_PUBLIC_DEFAULT_THEME=system
+      - EXPO_NO_TELEMETRY=1
     ports:
+      # Expo SDK 54 serves Metro + the manifest on a single port (3010).
+      # (3000 unifind-api · 3007/3008/3098 Hatiwal · 3009/3099/8081 edu are taken.)
       - "3010:3010"
-    command: ["npx", "expo", "start", "--port", "3010", "--clear"]
+    # --offline avoids the interactive "log in with your Expo account" prompt
+    #   that loops in Docker (no TTY) — the main cause of Expo Go failing to load.
+    # --go forces Expo Go mode. --clear wipes Metro's cache on start (the cache
+    #   lives in the node_modules volume, which survives `docker compose down`).
+    command: ["npx", "expo", "start", "--port", "3010", "--clear", "--offline", "--go"]

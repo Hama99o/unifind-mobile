@@ -56,7 +56,13 @@ declare module "expo-auth-session" {
 
   export class AuthRequest {
     constructor(config: AuthRequestConfig);
+    /** CSRF/state token — populated after makeAuthUrlAsync()/promptAsync(). */
+    state: string;
+    /** Built authorization URL — null until makeAuthUrlAsync()/promptAsync(). */
+    url: string | null;
     codeVerifier?: string;
+    /** Build the authorization URL (populates codeVerifier + state). */
+    makeAuthUrlAsync(discovery: DiscoveryDocument): Promise<string>;
     promptAsync(
       discovery: DiscoveryDocument,
       options?: { useProxy?: boolean; windowFeatures?: Record<string, unknown> }

@@ -25,6 +25,7 @@
 
 import { authService, isTokenExpired, fetchNodeUserInfo } from "@/services/authService";
 import * as AuthSession from "expo-auth-session";
+import * as Linking from "expo-linking";
 import { nodeApi } from "@/api/nodeApi";
 import { useAuthStore } from "@/stores/authStore";
 import { secureStorage, TOKEN_KEYS } from "@/utils/secure-storage";
@@ -122,24 +123,32 @@ describe("authService.login", () => {
           type: "success",
           params: { code },
         })),
+        makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
         codeVerifier: "verifier-xyz",
+        state: "state-xyz",
       })
     );
   }
 
-  it("persists tokens and sets the session, building the user from idToken claims merged with Node /userinfo", async () => {
+  /** Mock the broker (/api/google-signin) code→token exchange via global.fetch. */
+  function mockBroker(body: Record<string, unknown>) {
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => body,
+    })) as unknown as typeof fetch;
+  }
+
+  it("exchanges the code via the broker and sets the session, merging broker userinfo with Node /userinfo", async () => {
     mockSuccessfulPrompt();
-    const idToken = makeJwt({
-      sub: "auth0|abc123",
-      name: "Claims Name",
-      email: "claims@x.com",
-      picture: "https://claims/pic.png",
-      exp: FUTURE_EXP,
-    });
-    (AuthSession.exchangeCodeAsync as jest.Mock).mockResolvedValueOnce({
-      accessToken: "ACCESS-TOK",
-      refreshToken: "REFRESH-TOK",
-      idToken,
+    mockBroker({
+      access_token: "ACCESS-TOK",
+      user: {
+        sub: "auth0|abc123",
+        name: "Claims Name",
+        email: "claims@x.com",
+        picture: "https://claims/pic.png",
+      },
+      user_metadata: {},
     });
     // Node /userinfo overrides name (firstName+lastName) and picture (photo).
     (nodeApi.get as jest.Mock).mockResolvedValueOnce({
@@ -148,9 +157,15 @@ describe("authService.login", () => {
 
     await authService.login();
 
-    // Tokens persisted to secure storage.
+    // The broker endpoint was called with the code + redirect_uri.
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/google-signin"),
+      expect.objectContaining({ method: "POST" })
+    );
+
+    // Access token persisted; no refresh token in this flow.
     expect(await secureStorage.get(TOKEN_KEYS.access)).toBe("ACCESS-TOK");
-    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBe("REFRESH-TOK");
+    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBeNull();
 
     // Session set in the store.
     const state = useAuthStore.getState();
@@ -159,25 +174,23 @@ describe("authService.login", () => {
     expect(state.user).toEqual({
       sub: "auth0|abc123",
       userID: "abc123", // sub split on "|"
-      name: "Node User", // node fullName overrides claim name
-      email: "claims@x.com", // email from claims, not overridden by node merge
-      picture: "https://node/pic.png", // node photo overrides claim picture
+      name: "Node User", // node fullName overrides broker name
+      email: "claims@x.com", // email from broker userinfo
+      picture: "https://node/pic.png", // node photo overrides broker picture
     });
   });
 
-  it("keeps the claim values when Node /userinfo is unavailable", async () => {
+  it("keeps the broker values when Node /userinfo is unavailable", async () => {
     mockSuccessfulPrompt();
-    const idToken = makeJwt({
-      sub: "auth0|solo",
-      name: "Only Claims",
-      email: "solo@x.com",
-      picture: "https://claims/solo.png",
-      exp: FUTURE_EXP,
-    });
-    (AuthSession.exchangeCodeAsync as jest.Mock).mockResolvedValueOnce({
-      accessToken: "A2",
-      refreshToken: "R2",
-      idToken,
+    mockBroker({
+      access_token: "A2",
+      user: {
+        sub: "auth0|solo",
+        name: "Only Claims",
+        email: "solo@x.com",
+        picture: "https://claims/solo.png",
+      },
+      user_metadata: null,
     });
     // Node /userinfo returns nothing → hydrate keeps base user.
     (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
@@ -193,19 +206,31 @@ describe("authService.login", () => {
     });
   });
 
-  it("does not persist a refresh token when none is returned", async () => {
+  it("prefers user_metadata first/last name over the broker userinfo name", async () => {
     mockSuccessfulPrompt();
-    (AuthSession.exchangeCodeAsync as jest.Mock).mockResolvedValueOnce({
-      accessToken: "A-only",
-      // no refreshToken
-      idToken: makeJwt({ sub: "x", exp: FUTURE_EXP }),
+    mockBroker({
+      access_token: "A3",
+      user: { sub: "auth0|meta", name: "Ignored Name", email: "m@x.com" },
+      user_metadata: { first_name: "Meta", last_name: "Name" },
     });
     (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
 
     await authService.login();
 
-    expect(await secureStorage.get(TOKEN_KEYS.access)).toBe("A-only");
-    expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBeNull();
+    expect(useAuthStore.getState().user?.name).toBe("Meta Name");
+  });
+
+  it("throws (surfacing a toast upstream) when the broker exchange fails", async () => {
+    mockSuccessfulPrompt();
+    global.fetch = jest.fn(async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized",
+    })) as unknown as typeof fetch;
+
+    await expect(authService.login()).rejects.toThrow("token exchange failed");
+    expect(useAuthStore.getState().isLoggedIn).toBe(false);
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBeNull();
   });
 
   it("silently aborts on a cancel/dismiss result without storing tokens or a session", async () => {
@@ -217,6 +242,68 @@ describe("authService.login", () => {
     expect(useAuthStore.getState().isLoggedIn).toBe(false);
   });
 
+  it("completes login via the deep-link fallback when promptAsync never resolves with the code", async () => {
+    // Simulate the real-device bug: the OS delivers the redirect deep link to
+    // the app instead of the auth-session browser, so promptAsync never yields
+    // the code. The Linking listener must capture it and finish the exchange.
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      () => ({
+        // Never resolves — mirrors ASWebAuthenticationSession hanging.
+        promptAsync: jest.fn(() => new Promise(() => {})),
+        makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
+        codeVerifier: "verifier-deep",
+        state: "state-deep",
+      })
+    );
+    // The listener fires as soon as it is registered, delivering the callback URL.
+    (Linking.addEventListener as jest.Mock).mockImplementationOnce(
+      (_event: string, handler: (e: { url: string }) => void) => {
+        handler({ url: "unifind://auth/callback?code=deep-code&state=state-deep" });
+        return { remove: jest.fn() };
+      }
+    );
+    let brokerBody: string | undefined;
+    global.fetch = jest.fn(async (_url: string, init: { body?: string }) => {
+      brokerBody = init?.body;
+      return {
+        ok: true,
+        json: async () => ({
+          access_token: "DEEP-ACCESS",
+          user: { sub: "auth0|deep" },
+          user_metadata: {},
+        }),
+      };
+    }) as unknown as typeof fetch;
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: {} });
+
+    await authService.login();
+
+    // The code captured from the deep link was sent to the broker.
+    expect(brokerBody).toContain("deep-code");
+    expect(await secureStorage.get(TOKEN_KEYS.access)).toBe("DEEP-ACCESS");
+    expect(useAuthStore.getState().isLoggedIn).toBe(true);
+  });
+
+  it("rejects a deep-link callback whose state does not match the request", async () => {
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      () => ({
+        promptAsync: jest.fn(() => new Promise(() => {})),
+        makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
+        codeVerifier: "v",
+        state: "expected-state",
+      })
+    );
+    (Linking.addEventListener as jest.Mock).mockImplementationOnce(
+      (_event: string, handler: (e: { url: string }) => void) => {
+        handler({ url: "unifind://auth/callback?code=x&state=WRONG-state" });
+        return { remove: jest.fn() };
+      }
+    );
+
+    await expect(authService.login()).rejects.toThrow("state mismatch");
+    expect(AuthSession.exchangeCodeAsync).not.toHaveBeenCalled();
+  });
+
   it("throws when the result is an error with a description", async () => {
     (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
       () => ({
@@ -224,7 +311,9 @@ describe("authService.login", () => {
           type: "error",
           error: { description: "access_denied" },
         })),
+        makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
         codeVerifier: "v",
+        state: "s",
       })
     );
     await expect(authService.login()).rejects.toThrow("Auth0 error: access_denied");
@@ -234,7 +323,9 @@ describe("authService.login", () => {
     (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
       () => ({
         promptAsync: jest.fn(async () => ({ type: "success", params: {} })),
+        makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
         codeVerifier: "v",
+        state: "s",
       })
     );
     await expect(authService.login()).rejects.toThrow(
@@ -254,7 +345,9 @@ describe("authService.signup", () => {
         capturedConfig = config;
         return {
           promptAsync: jest.fn(async () => ({ type: "cancel" })),
+          makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
           codeVerifier: "v",
+          state: "s",
         };
       }
     );

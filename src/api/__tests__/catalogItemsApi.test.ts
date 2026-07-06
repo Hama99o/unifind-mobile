@@ -44,6 +44,12 @@ describe("catalogItemsApi.getProgramsByDocumentIds", () => {
     expect(url).toContain("filters[documentId][$in][0]=p-1");
     expect(url).toContain("filters[documentId][$in][1]=p-2");
     expect(url).toContain("populate[degree][fields][0]=title");
+    // nbOfYears/nbOfCredits are components — must be populated, never requested
+    // as scalar fields (that 400s the query and broke compare/favorites).
+    expect(url).toContain("populate[nbOfYears][fields][0]=min");
+    expect(url).toContain("populate[nbOfCredits][fields][0]=min");
+    expect(url).not.toContain("=nbOfYears");
+    expect(url).not.toContain("=nbOfCredits");
     expect(url).toContain("filters[locale][$eq]=en");
     expect(url).toContain("pagination[pageSize]=50");
     expect(url).toContain("status=draft");
@@ -102,6 +108,11 @@ describe("catalogItemsApi.getInstitutionsByDocumentIds", () => {
     expect(url.startsWith("/api/instituitions?")).toBe(true);
     expect(url).toContain("filters[documentId][$in][0]=i-1");
     expect(url).toContain("populate[ranking][fields][0]=position");
+    // institution has no scalar `type` field, and ranking has no `name` field —
+    // requesting either 400s the query (broke the institutions compare tab).
+    // (institutionInfo's component `type` populate is fine — guard the bad ones.)
+    expect(url).not.toMatch(/fields\[\d+\]=type(&|$)/);
+    expect(url).not.toContain("populate[ranking][fields][1]=name");
     expect(url).toContain("pagination[pageSize]=50");
   });
 
@@ -151,7 +162,10 @@ describe("catalogItemsApi.getOfferingsByIds", () => {
     expect(url.startsWith("/api/offerings?")).toBe(true);
     expect(url).toContain("filters[id][$in][0]=7");
     expect(url).toContain("populate[image][fields][0]=url");
-    expect(url).toContain("fields[7]=availableOnline");
+    expect(url).toContain("fields[5]=availableOnline");
+    // price/duration are Node-side, not Strapi scalar fields — must not be requested.
+    expect(url).not.toContain("=price");
+    expect(url).not.toContain("=duration");
     expect(url).toContain("filters[locale][$eq]=ar");
     expect(url).toContain("pagination[pageSize]=50");
   });

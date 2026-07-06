@@ -10,6 +10,13 @@
  *   3. Native-only module stubs (secure store, date picker, webview, etc.).
  *   4. Axios instance mocks — tests run fully offline by default.
  *   5. i18n — synchronous stub so component tests are deterministic.
+ *
+ * Env: the auth broker URL must exist before authService is imported so its
+ * module-level AUTH_BROKER_URL const is populated.
+ */
+process.env.EXPO_PUBLIC_AUTH_URL =
+  process.env.EXPO_PUBLIC_AUTH_URL || "https://auth.test";
+/*
  *   6. Console noise suppression.
  */
 
@@ -88,6 +95,7 @@ jest.mock("expo-auth-session", () => ({
     promptAsync: jest.fn(async () => ({ type: "cancel" })),
     makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
     codeVerifier: "mock-verifier",
+    state: "mock-state",
   })),
   exchangeCodeAsync: jest.fn(async () => ({
     accessToken: "mock-access-token",
@@ -110,7 +118,23 @@ jest.mock("expo-web-browser", () => ({
   openAuthSessionAsync: jest.fn(async () => ({ type: "cancel" })),
   openBrowserAsync: jest.fn(async () => ({ type: "cancel" })),
   dismissBrowser: jest.fn(),
+  dismissAuthSession: jest.fn(),
   maybeCompleteAuthSession: jest.fn(() => ({ type: "success" })),
+}));
+
+// expo-linking — stub (deep-link fallback listener in authService)
+jest.mock("expo-linking", () => ({
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  parse: jest.fn((url: string) => {
+    const query = url.includes("?") ? url.split("?")[1] : "";
+    const queryParams: Record<string, string> = {};
+    for (const pair of query.split("&")) {
+      if (!pair) continue;
+      const [k, v] = pair.split("=");
+      queryParams[decodeURIComponent(k)] = decodeURIComponent(v ?? "");
+    }
+    return { queryParams };
+  }),
 }));
 
 // expo-crypto — stub

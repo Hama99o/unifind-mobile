@@ -13,6 +13,7 @@
       "env": {
         "EXPO_PUBLIC_NODE_API_URL": "https://api-stg.unifind-lb.org/api",
         "EXPO_PUBLIC_STRAPI_API_URL": "https://cms.unifind.online",
+        "EXPO_PUBLIC_AUTH_URL": "https://auth-stg.unifind-lb.org",
         "EXPO_PUBLIC_AUTH0_DOMAIN": "dev-gim0725gfieuvjxt.us.auth0.com",
         "EXPO_PUBLIC_AUTH0_CLIENT_ID": "lx7YKrGuk3trDoIhNESkkbxqseU7Nbpr",
         "EXPO_PUBLIC_AUTH0_AUDIENCE": "https://dev-gim0725gfieuvjxt.us.auth0.com/api/v2/",
