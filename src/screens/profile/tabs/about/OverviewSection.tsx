@@ -18,10 +18,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useAsyncResource } from "@/hooks/useAsyncResource";
 import {
   View,
-  ScrollView,
   Pressable,
   Modal,
 } from "react-native";
+import { KeyboardSafeScrollView } from "@/components/shared/KeyboardSafeScrollView";
 import { X, Plus, Globe } from "lucide-react-native";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
@@ -306,7 +306,7 @@ export function OverviewSection() {
   if (loading) return <SectionSkeleton />;
 
   return (
-    <ScrollView
+    <KeyboardSafeScrollView
       className="flex-1"
       contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}
       keyboardShouldPersistTaps="handled"
@@ -423,6 +423,6 @@ export function OverviewSection() {
         allLanguages={allLanguages}
         addedIds={userLangs.map((l) => l._id)}
       />
-    </ScrollView>
+    </KeyboardSafeScrollView>
   );
 }

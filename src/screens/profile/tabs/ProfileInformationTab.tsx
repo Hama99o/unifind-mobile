@@ -16,8 +16,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   View,
-  ScrollView,
 } from "react-native";
+import { KeyboardSafeScrollView } from "@/components/shared/KeyboardSafeScrollView";
 import { Lock } from "lucide-react-native";
 import { Text } from "@/components/ui/text";
 import { Input, InputField } from "@/components/ui/input";
@@ -225,7 +225,7 @@ export function ProfileInformationTab() {
   }
 
   return (
-    <ScrollView
+    <KeyboardSafeScrollView
       className="flex-1"
       contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}
       keyboardShouldPersistTaps="handled"
@@ -373,6 +373,6 @@ export function ProfileInformationTab() {
           onPress={handleSave}
         />
       )}
-    </ScrollView>
+    </KeyboardSafeScrollView>
   );
 }

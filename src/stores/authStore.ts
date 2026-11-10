@@ -96,6 +96,34 @@ function buildUser(payload: Record<string, unknown>): AuthUser {
   };
 }
 
+// ─── Saved profile (display fields only) ─────────────────────────────────────
+// The access token (audience /api/v2/) carries no email/name claims, so after
+// an app restart a new account (nothing in Node user info yet) had a header
+// that said just "Profile". Save the display fields at sign-in; never secrets.
+const USER_KEY = "uf.user";
+type SavedProfile = Pick<AuthUser, "sub" | "name" | "email" | "picture">;
+
+async function readSavedProfile(sub: string): Promise<Partial<AuthUser>> {
+  try {
+    const raw = await secureStorage.get(USER_KEY);
+    const saved = raw ? (JSON.parse(raw) as SavedProfile) : null;
+    if (!saved || saved.sub !== sub) return {};
+    return { name: saved.name, email: saved.email, picture: saved.picture };
+  } catch {
+    return {};
+  }
+}
+
+/** Claims win when present; the saved profile fills the gaps. */
+function withSaved(user: AuthUser, saved: Partial<AuthUser>): AuthUser {
+  return {
+    ...user,
+    name: user.name ?? saved.name,
+    email: user.email ?? saved.email,
+    picture: user.picture ?? saved.picture,
+  };
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -106,6 +134,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setSession: async (token, user) => {
     await secureStorage.set(TOKEN_KEYS.access, token);
+    const saved: SavedProfile = { sub: user.sub, name: user.name, email: user.email, picture: user.picture };
+    await secureStorage.set(USER_KEY, JSON.stringify(saved));
     set({ isLoggedIn: true, accessToken: token, user });
   },
 
@@ -129,7 +159,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         // Best-effort hydrate from Node /userinfo so name/avatar are fresh
         // (avoids blank header when the app reopens with a still-valid token).
         const payload = decodePayload(token);
-        let user = buildUser(payload);
+        const claims = buildUser(payload);
+        let user = withSaved(claims, await readSavedProfile(claims.sub));
         set({ isLoggedIn: true, accessToken: token, user, isBootstrapping: false });
 
         // Hydrate asynchronously; do not block bootstrap completion.
@@ -159,6 +190,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // No valid token — clear and sign out.
       await secureStorage.remove(TOKEN_KEYS.access);
       await secureStorage.remove(TOKEN_KEYS.refresh);
+      await secureStorage.remove(USER_KEY);
       set({ isLoggedIn: false, accessToken: null, user: null, isBootstrapping: false });
     } catch {
       set({ isBootstrapping: false, isLoggedIn: false });
@@ -168,6 +200,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await secureStorage.remove(TOKEN_KEYS.access);
     await secureStorage.remove(TOKEN_KEYS.refresh);
+    await secureStorage.remove(USER_KEY);
     set({ isLoggedIn: false, accessToken: null, user: null });
   },
 }));

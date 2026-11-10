@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import {
   View, ScrollView, Modal, Pressable,
 } from "react-native";
+import { KeyboardSafeScrollView } from "@/components/shared/KeyboardSafeScrollView";
 import { X, Briefcase } from "lucide-react-native";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
@@ -366,7 +367,7 @@ export function ProfessionalBackgroundSection() {
     : undefined;
 
   return (
-    <ScrollView
+    <KeyboardSafeScrollView
       className="flex-1"
       contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}
     >
@@ -413,6 +414,6 @@ export function ProfessionalBackgroundSection() {
         initialForm={editForm}
         mode={editItem ? "edit" : "add"}
       />
-    </ScrollView>
+    </KeyboardSafeScrollView>
   );
 }

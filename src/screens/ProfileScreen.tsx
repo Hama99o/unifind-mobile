@@ -21,6 +21,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { useAuthStore } from "@/stores/authStore";
 import { useAuthActions } from "@/auth/useAuthActions";
+import { useKeyboardVisible } from "@/hooks/useKeyboardVisible";
 
 import { ProfileHeader } from "./profile/ProfileHeader";
 import { ProfileTabBar, type ProfileTab } from "./profile/ProfileTabBar";
@@ -82,7 +83,7 @@ export function SignedOutProfile() {
 
 // ─── Logged-in view ───────────────────────────────────────────────────────────
 
-function SignedInProfile() {
+export function SignedInProfile() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
   // Header data from the shared, cached user info (React Query) — refreshes
   // automatically after Profile Information is saved.
@@ -90,7 +91,12 @@ function SignedInProfile() {
   const firstName = info?.firstName ?? "";
   const lastName = info?.lastName ?? "";
   const role = info?.role ?? "";
-  const email = info?.email ?? "";
+  // A new account has no name/email in Node user info yet: fall back to the
+  // signed-in Auth0 email so the header is never just "Profile".
+  const authEmail = useAuthStore((s) => s.user?.email) ?? "";
+  const email = info?.email || authEmail;
+  // With the keyboard up the fixed header left ~90 px for the form; hide it.
+  const keyboardVisible = useKeyboardVisible();
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -116,12 +122,14 @@ function SignedInProfile() {
   return (
     <View className="flex-1">
       {/* Header: gradient band + avatar + name + subtitle */}
-      <ProfileHeader
-        firstName={firstName}
-        lastName={lastName}
-        role={role}
-        email={email}
-      />
+      {!keyboardVisible && (
+        <ProfileHeader
+          firstName={firstName}
+          lastName={lastName}
+          role={role}
+          email={email}
+        />
+      )}
 
       {/* Horizontal scrollable tab bar + sign-out outside scroll */}
       <ProfileTabBar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -138,10 +146,11 @@ function SignedInProfile() {
 
 export default function ProfileScreen() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const keyboardVisible = useKeyboardVisible();
 
   return (
     <ScreenContainer>
-      <LanguageSwitch />
+      {!keyboardVisible && <LanguageSwitch />}
       {isLoggedIn ? <SignedInProfile /> : <SignedOutProfile />}
     </ScreenContainer>
   );

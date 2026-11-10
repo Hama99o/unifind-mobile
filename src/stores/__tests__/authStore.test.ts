@@ -361,3 +361,40 @@ describe("bootstrap", () => {
     expect(u?.userID).toBe("plainsubject");
   });
 });
+
+// ─── profile survives restart ─────────────────────────────────────────────────
+
+describe("user profile after an app restart", () => {
+  // QA 2026-11-10: the access token (audience /api/v2/) has no email/name
+  // claims, so after a restart a new account's header showed just "Profile".
+  it("restores the email/name/picture saved at sign-in when the token has none", async () => {
+    const token = makeToken({ sub: "auth0|qa", exp: NOW_SECONDS + 3600 });
+    await useAuthStore.getState().setSession(token, {
+      sub: "auth0|qa", userID: "qa", email: "qa@x.com", name: "QA", picture: "p.png",
+    });
+    useAuthStore.setState({ ...INITIAL }); // "restart"
+    await useAuthStore.getState().bootstrap();
+    expect(useAuthStore.getState().user).toMatchObject({
+      sub: "auth0|qa", email: "qa@x.com", name: "QA", picture: "p.png",
+    });
+  });
+
+  it("forgets the saved profile on logout", async () => {
+    const token = makeToken({ sub: "auth0|qa", exp: NOW_SECONDS + 3600 });
+    await useAuthStore.getState().setSession(token, { sub: "auth0|qa", userID: "qa", email: "qa@x.com" });
+    await useAuthStore.getState().logout();
+    const other = makeToken({ sub: "auth0|other", exp: NOW_SECONDS + 3600 });
+    await secureStorage.set(TOKEN_KEYS.access, other);
+    await useAuthStore.getState().bootstrap();
+    expect(useAuthStore.getState().user?.email).toBeUndefined();
+  });
+
+  it("ignores a saved profile that belongs to another account", async () => {
+    const token = makeToken({ sub: "auth0|qa", exp: NOW_SECONDS + 3600 });
+    await useAuthStore.getState().setSession(token, { sub: "auth0|qa", userID: "qa", email: "qa@x.com" });
+    await secureStorage.set(TOKEN_KEYS.access, makeToken({ sub: "auth0|other", exp: NOW_SECONDS + 3600 }));
+    useAuthStore.setState({ ...INITIAL });
+    await useAuthStore.getState().bootstrap();
+    expect(useAuthStore.getState().user?.email).toBeUndefined();
+  });
+});

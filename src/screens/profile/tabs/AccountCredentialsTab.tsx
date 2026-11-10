@@ -7,7 +7,8 @@
  */
 
 import { useState } from "react";
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
+import { KeyboardSafeScrollView } from "@/components/shared/KeyboardSafeScrollView";
 import { CircleCheck, CircleAlert } from "lucide-react-native";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
@@ -98,7 +99,7 @@ export function AccountCredentialsTab() {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <ScrollView
+    <KeyboardSafeScrollView
       className="flex-1"
       contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 16 }}
       keyboardShouldPersistTaps="handled"
@@ -171,6 +172,6 @@ export function AccountCredentialsTab() {
           />
         )}
       </View>
-    </ScrollView>
+    </KeyboardSafeScrollView>
   );
 }
