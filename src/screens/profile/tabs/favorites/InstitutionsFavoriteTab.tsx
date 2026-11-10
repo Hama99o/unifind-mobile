@@ -46,6 +46,7 @@ export function InstitutionsFavoriteTab() {
   // §2B: useAsyncResource drives loading/error/reload.
   // Loader throws with translated message so AsyncBoundary renders it directly.
   const { data, loading, error, reload } = useAsyncResource<InstitutionWithRating[]>(
+    ["favorites", "Institution", locale],
     async () => {
       if (!userId) return [];
       try {
@@ -60,8 +61,7 @@ export function InstitutionsFavoriteTab() {
       } catch {
         throw new Error(t("profileLoadError"));
       }
-    },
-    [userId, locale]
+    }
   );
 
   // Track locally-removed rows for immediate row-disappear UX on un-favorite.

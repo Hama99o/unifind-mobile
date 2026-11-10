@@ -47,6 +47,7 @@ export function ProgramsFavoriteTab() {
   // §2B: useAsyncResource drives loading/error/reload.
   // Loader throws with translated message so AsyncBoundary renders it directly.
   const { data, loading, error, reload } = useAsyncResource<CatalogProgram[]>(
+    ["favorites", "Program", locale],
     async () => {
       if (!userId) return [];
       try {
@@ -60,8 +61,7 @@ export function ProgramsFavoriteTab() {
       } catch {
         throw new Error(t("profileLoadError"));
       }
-    },
-    [userId, locale]
+    }
   );
 
   // Track locally-removed rows so the row disappears immediately on un-favorite,

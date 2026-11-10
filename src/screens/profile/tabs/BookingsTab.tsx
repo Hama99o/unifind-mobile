@@ -115,14 +115,14 @@ export function BookingsTab() {
   const router = useRouter();
 
   const { data, loading, error, reload } = useAsyncResource<BookingListItem[]>(
+    ["bookings"],
     async () => {
       try {
         return await bookingsApi.getByUser();
       } catch {
         throw new Error(t("profileLoadError"));
       }
-    },
-    []
+    }
   );
 
   const bookings = data ?? [];

@@ -1,18 +1,23 @@
 /**
- * useAsyncResource — generic async loader hook.
+ * useAsyncResource — per-user server data on React Query.
  *
- * Runs `loader` on mount and whenever `deps` change.
- * Returns { data, loading, error, reload }.
- * Sets error to the loader's thrown message (caller passes the i18n string).
+ * Kept for its simple { data, loading, error, reload } shape, but now cached
+ * (QA 2026-11-10 RQ-01): revisiting a profile tab shows the last data at once
+ * and refreshes in the background instead of re-showing a skeleton.
+ *
+ * The key is scoped to the signed-in user automatically, so caches never leak
+ * across accounts. `loading` is true only while there is no data yet.
  *
  * Usage:
  *   const { data, loading, error, reload } = useAsyncResource(
- *     () => myApi.fetchData(),
- *     [userId, locale]
+ *     ["favorites", "Program", locale],
+ *     () => myApi.fetchData()
  *   );
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/authStore";
 
 export interface AsyncResourceState<T> {
   data: T | null;
@@ -21,43 +26,33 @@ export interface AsyncResourceState<T> {
   reload: () => void;
 }
 
+const DEFAULT_ERROR = "Failed to load. Please try again.";
+
 export function useAsyncResource<T>(
-  loader: () => Promise<T>,
-  deps: unknown[] = []
+  key: readonly unknown[],
+  loader: () => Promise<T>
 ): AsyncResourceState<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const userId = useAuthStore((s) => s.user?.userID);
+  const query = useQuery({
+    queryKey: ["user", userId ?? "anon", ...key],
+    queryFn: loader,
+  });
 
-  // Keep a stable ref to the loader so the callback doesn't stale-close over it.
-  const loaderRef = useRef(loader);
-  loaderRef.current = loader;
-
-  // Increment to trigger a reload without re-creating the effect.
-  const [reloadCount, setReloadCount] = useState(0);
-
-  const run = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await loaderRef.current();
-      setData(result);
-    } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to load. Please try again.";
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [reloadCount, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    run();
-  }, [run]);
-
+  const { refetch } = query;
   const reload = useCallback(() => {
-    setReloadCount((n) => n + 1);
-  }, []);
+    void refetch();
+  }, [refetch]);
 
-  return { data, loading, error, reload };
+  const error = query.isError
+    ? query.error instanceof Error
+      ? query.error.message
+      : DEFAULT_ERROR
+    : null;
+
+  return {
+    data: query.data ?? null,
+    loading: query.isPending,
+    error,
+    reload,
+  };
 }

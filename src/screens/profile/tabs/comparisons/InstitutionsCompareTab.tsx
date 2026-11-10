@@ -31,6 +31,7 @@ export function InstitutionsCompareTab() {
 
   // §2B: useAsyncResource drives loading/error/reload.
   const { data, loading, error, reload } = useAsyncResource<Record<string, string>[]>(
+    ["compare", "Institution", locale],
     async () => {
       try {
         const ids = await comparesApi.getCompareIds("Institution");
@@ -86,8 +87,7 @@ export function InstitutionsCompareTab() {
       } catch {
         throw new Error(t("profileLoadError"));
       }
-    },
-    [locale]
+    }
   );
 
   // Track locally-removed rows for immediate row-disappear on remove.

@@ -41,6 +41,7 @@ export function OfferingsFavoriteTab() {
   // §2B: useAsyncResource drives loading/error/reload.
   // Loader throws with translated message so AsyncBoundary renders it directly.
   const { data, loading, error, reload } = useAsyncResource<MergedOffering[]>(
+    ["favorites", "Offering", locale],
     async () => {
       if (!userId) return [];
       try {
@@ -58,8 +59,7 @@ export function OfferingsFavoriteTab() {
       } catch {
         throw new Error(t("profileLoadError"));
       }
-    },
-    [userId, locale]
+    }
   );
 
   // Track locally-removed rows for immediate row-disappear UX on un-favorite.
