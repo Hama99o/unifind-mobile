@@ -69,7 +69,7 @@ function StaggeredRow({
   );
 }
 
-export function NumbersSection() {
+export function NumbersSection({ titleKey = "unifindByTheNumbers" }: { titleKey?: string } = {}) {
   const colors = useColors();
   const rows: [StatTileProps, StatTileProps][] = [
     [STATS[0], STATS[1]],
@@ -80,7 +80,7 @@ export function NumbersSection() {
   return (
     <View className="bg-prussian" style={{ borderTopWidth: 2, borderTopColor: colors.secondary }}>
       <View className="pt-7 pb-6 px-4">
-        <SectionHeader titleKey="unifindByTheNumbers" onDark />
+        <SectionHeader titleKey={titleKey} onDark />
         <View className="gap-3">
           {rows.map(([left, right], i) => (
             <StaggeredRow key={i} left={left} right={right} delay={i * 80} />

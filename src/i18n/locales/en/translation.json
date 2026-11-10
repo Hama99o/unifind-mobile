@@ -683,5 +683,24 @@
     "conclusionTitle": "Conclusion"
   },
   "paymentsComingSoonTitle": "Online booking is coming soon",
-  "paymentsComingSoonBody": "Payments are not open in the app yet. You can browse specialists, dates and times now; booking and payment will be available here soon."
+  "paymentsComingSoonBody": "Payments are not open in the app yet. You can browse specialists, dates and times now; booking and payment will be available here soon.",
+  "aboutUsHeading1": "Our",
+  "aboutUsHeading2": "Story",
+  "aboutUsParagraph1": "Unifind started as a solution for students, by students. We know the struggle of choosing the right path. Today, we have evolved into a comprehensive ecosystem where futures begin. We are not just about academic guidance; we are a bridge for anyone looking to study in Lebanon, offering professional mentorship through our Growth Center and connecting parents, high school students, professionals, and university staff.",
+  "aboutUsParagraph2": "Our vision is to become the go-to platform for education and career growth, similar to global leaders like StudyPortals and TopUniversities, but with a unique focus on mentorship akin to MentorCruise. We aim to attract international students to Lebanon and empower our local community with the tools they need to succeed.",
+  "aboutUsNumbersTitle": "Unifind In Numbers",
+  "aboutUsWhyUsHeading1": "Where Futures Begin",
+  "aboutUsWhyUsHeading2": "“Education is the most powerful weapon which you can use to change the world.”",
+  "aboutUsWhyUsQuoteAuthor": "Nelson Mandela",
+  "aboutUsWhyUsParagraph": "We are more than a directory. We are a partner in your journey. Whether you are a parent guiding your child, a professional seeking to upskill, or a university looking to attract talent, Unifind is your destination. Our platform integrates academic exploration with real-world mentorship, ensuring that every step you take is a step towards a brighter future.",
+  "aboutUsWhyUsTitle": "Why Us",
+  "aboutUsWhyUsDescription": "At our company, your success is not just a goal; it is our top priority. We are dedicated to providing you with the tools, resources, and support you need to achieve your aspirations. Our team is committed to understanding your unique challenges and working alongside you to ensure that you reach your full potential.",
+  "aboutUsWhyUsCardTitle": "One Stop Shop",
+  "aboutUsWhyUsCardTitle2": "Real World Mentorship Network",
+  "aboutUsWhyUsCardTitle3": "Career Driven by Design",
+  "aboutUsWhyUsCardTitle4": "Free Access with High Impact",
+  "aboutUsWhyUsCardDescription": "Combines academic, career, mentorship, and institutional insights to support students and institutions.",
+  "aboutUsWhyUsCardDescription2": "Connects students to professionals for practice advice and career paths.",
+  "aboutUsWhyUsCardDescription3": "Equips students with practical tools and expert with labor market needs.",
+  "aboutUsWhyUsCardDescription4": "Lebanon’s only free centralized platform for all majors and universities."
 }

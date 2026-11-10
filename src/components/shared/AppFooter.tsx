@@ -164,8 +164,7 @@ export function AppFooter() {
       links: [
         {
           label: t("navAboutUs"),
-          onPress: () =>
-            showToast(t("navAboutUs") + " · " + t("common.comingSoon")),
+          onPress: () => router.push("/(main)/about-us"),
         },
         {
           label: t("contact_us"),
