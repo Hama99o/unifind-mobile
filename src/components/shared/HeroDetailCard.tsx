@@ -113,7 +113,7 @@ export function HeroDetailCard({
       {/* Logo + name */}
       <View className={`flex-row items-start p-4 gap-4 mt-10 ${isRtl ? "flex-row-reverse" : ""}`}>
         {logoSrc ? (
-          <View style={{ width: 80, height: 68, borderRadius: 10, overflow: "hidden", borderWidth: 1, borderColor: colors.border }}>
+          <View testID="hero-logo" style={{ width: 80, height: 68, borderRadius: 10, overflow: "hidden", borderWidth: 1, borderColor: colors.border }}>
             {/* Bottom-to-top scrim softens the image edge against the card */}
             <Image
               source={{ uri: logoSrc }}
@@ -127,11 +127,7 @@ export function HeroDetailCard({
               style={StyleSheet.absoluteFillObject}
             />
           </View>
-        ) : (
-          <View
-            className="w-20 h-[68px] rounded-xl bg-muted items-center justify-center border border-border"
-          />
-        )}
+        ) : null /* No logo: no empty grey box (QA BUG-08) — the title takes the width. */}
 
         <View className="flex-1">
           <Heading

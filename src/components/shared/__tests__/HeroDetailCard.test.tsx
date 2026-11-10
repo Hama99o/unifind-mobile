@@ -27,6 +27,14 @@ describe("HeroDetailCard", () => {
     expect(screen.getByText("(37 reviews)")).toBeTruthy();
   });
 
+  // QA BUG-08: no empty grey placeholder when there is no logo.
+  it("renders the logo box only when a logo is given", () => {
+    const { rerender } = render(<HeroDetailCard title="No logo" />);
+    expect(screen.queryByTestId("hero-logo")).toBeNull();
+    rerender(<HeroDetailCard title="With logo" logoSrc="https://cdn/logo.png" />);
+    expect(screen.getByTestId("hero-logo")).toBeTruthy();
+  });
+
   it("omits the X/5 rating text when rating is 0 (default)", () => {
     render(<HeroDetailCard title="No Rating" />);
     expect(screen.getByText("No Rating")).toBeTruthy();
