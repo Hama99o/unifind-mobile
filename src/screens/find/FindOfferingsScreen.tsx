@@ -233,6 +233,7 @@ export default function FindOfferingsScreen({ subNav, initialFilters: initialFil
   const list = (
     <UniversalList<MergedOffering>
       config={{
+        queryKey: ["list", "offerings", lang, isLoggedIn],
         fetchPage,
         clientComparator,
         title: t("findOffering"),

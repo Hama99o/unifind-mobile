@@ -17,6 +17,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   FlatList,
   RefreshControl,
@@ -66,13 +67,6 @@ export function UniversalList<T>({
   const colors = useColors();
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [items, setItems] = useState<T[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageCount, setPageCount] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const [search, setSearch] = useState("");
@@ -94,7 +88,6 @@ export function UniversalList<T>({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(search);
-      setPage(1);
     }, DEBOUNCE_MS);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -105,82 +98,56 @@ export function UniversalList<T>({
   useEffect(() => {
     if (initialFilters) {
       setFilterValues(initialFilters);
-      setPage(1);
     }
   }, [JSON.stringify(initialFilters)]);
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
-  const fetchData = useCallback(
-    async (pageNum: number, append: boolean) => {
-      try {
-        if (pageNum === 1 && !append) setLoading(true);
-        else setLoadingMore(true);
-        setError(null);
+  // ── Fetch (React Query) ────────────────────────────────────────────────────
+  // Cached per list + search + filters + sort: coming back to a list renders the
+  // pages already loaded instead of a skeleton (QA 2026-11-10 RQ-01).
+  const listQuery = useInfiniteQuery({
+    queryKey: [...config.queryKey, debouncedSearch, filterValues, sort],
+    queryFn: ({ pageParam }) =>
+      config.fetchPage({ page: pageParam, search: debouncedSearch, filters: filterValues, sort }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page < last.pageCount ? last.page + 1 : undefined),
+  });
 
-        const result = await config.fetchPage({
-          page: pageNum,
-          search: debouncedSearch,
-          filters: filterValues,
-          sort,
-        });
-
-        setItems((prev) => {
-          const merged = append ? [...prev, ...result.items] : result.items;
-          // Re-sort the entire accumulated list if a client comparator is provided.
-          if (config.clientComparator && merged.length > 0) {
-            return [...merged].sort((a, b) => config.clientComparator!(a, b, sort));
-          }
-          return merged;
-        });
-        setPage(result.page);
-        setPageCount(result.pageCount);
-        setTotal(result.total);
-      } catch {
-        setError(t("common.loadError"));
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-        setRefreshing(false);
-      }
-    },
-    [config.fetchPage, debouncedSearch, filterValues, sort, t]
-  );
-
-  // Reload from page 1 whenever search/filters/sort change
-  useEffect(() => {
-    setItems([]);
-    setPage(1);
-    fetchData(1, false);
-  }, [debouncedSearch, filterValues, sort]);
+  const pages = listQuery.data?.pages ?? [];
+  const merged = pages.flatMap((p) => p.items);
+  const items =
+    config.clientComparator && merged.length > 0
+      ? [...merged].sort((a, b) => config.clientComparator!(a, b, sort))
+      : merged;
+  const total = pages.length ? pages[pages.length - 1].total : 0;
+  const loading = listQuery.isPending;
+  const loadingMore = listQuery.isFetchingNextPage;
+  const error = listQuery.isError && !listQuery.data ? t("common.loadError") : null;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleLoadMore = useCallback(() => {
-    if (loadingMore || loading || page >= pageCount) return;
-    const next = page + 1;
-    setPage(next);
-    fetchData(next, true);
-  }, [loadingMore, loading, page, pageCount, fetchData]);
+    if (listQuery.hasNextPage && !listQuery.isFetchingNextPage) void listQuery.fetchNextPage();
+  }, [listQuery]);
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    setPage(1);
-    fetchData(1, false);
-  }, [fetchData]);
+    try {
+      await listQuery.refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [listQuery]);
 
   const handleRetry = useCallback(() => {
-    setPage(1);
-    fetchData(1, false);
-  }, [fetchData]);
+    void listQuery.refetch();
+  }, [listQuery]);
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setFilterValues(values);
-    setPage(1);
     setShowFilterDrawer(false);
   }, []);
 
   const handleClearAllFilters = useCallback(() => {
     setFilterValues({});
-    setPage(1);
     setShowFilterDrawer(false);
   }, []);
 
@@ -196,13 +163,11 @@ export function UniversalList<T>({
       }
       return next;
     });
-    setPage(1);
   }, []);
 
   const handleSelectSort = useCallback((key: string) => {
     setSort(key);
     setShowSortSheet(false);
-    setPage(1);
   }, []);
 
   // ── Sort options ───────────────────────────────────────────────────────────
@@ -262,26 +227,12 @@ export function UniversalList<T>({
     );
   };
 
-  if (loading) {
-    return (
-      <View className="flex-1">
-        {renderHeader()}
-        <ListSkeleton variant={config.skeletonVariant} />
-        <ListSortSheet
-          isOpen={showSortSheet}
-          onClose={() => setShowSortSheet(false)}
-          sortOptions={sortOptions}
-          currentSort={sort}
-          onSelect={handleSelectSort}
-        />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View className="flex-1">
-        {renderHeader()}
+  // Loading / error / empty all render INSIDE the one FlatList, so the header
+  // (and the focused search input) is never unmounted while typing.
+  const renderEmpty = () => {
+    if (loading) return <ListSkeleton variant={config.skeletonVariant} />;
+    if (error) {
+      return (
         <EmptyState
           title={error}
           description={t("common.loadErrorDesc")}
@@ -291,21 +242,20 @@ export function UniversalList<T>({
             </View>
           }
         />
-        <ListSortSheet
-          isOpen={showSortSheet}
-          onClose={() => setShowSortSheet(false)}
-          sortOptions={sortOptions}
-          currentSort={sort}
-          onSelect={handleSelectSort}
-        />
-      </View>
+      );
+    }
+    return (
+      <EmptyState
+        title={config.empty?.title ?? t("common.empty")}
+        description={config.empty?.description}
+      />
     );
-  }
+  };
 
   return (
     <View className="flex-1">
       <FlatList
-        data={items}
+        data={loading || error ? [] : items}
         keyExtractor={(item, i) => {
           try {
             return config.keyExtractor(item);
@@ -320,14 +270,11 @@ export function UniversalList<T>({
           paddingHorizontal: 16,
           paddingBottom: stickyBottom ? 88 : 24,
         }}
-        ListHeaderComponent={renderHeader}
+        // An element (not a function): a new function each render would be a new
+        // component type and remount the search input on every keystroke.
+        ListHeaderComponent={renderHeader()}
         ListFooterComponent={renderFooter}
-        ListEmptyComponent={
-          <EmptyState
-            title={config.empty?.title ?? t("common.empty")}
-            description={config.empty?.description}
-          />
-        }
+        ListEmptyComponent={renderEmpty()}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
         refreshControl={

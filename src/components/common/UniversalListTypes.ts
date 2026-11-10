@@ -13,6 +13,11 @@ export interface SortOption {
 
 export interface UniversalListConfig<T> {
   // Data
+  /**
+   * React Query key for this list (include everything fetchPage closes over,
+   * e.g. locale). Search, filters and sort are appended automatically.
+   */
+  queryKey: readonly unknown[];
   fetchPage: (params: {
     page: number;
     search: string;

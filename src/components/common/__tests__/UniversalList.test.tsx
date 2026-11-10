@@ -82,6 +82,7 @@ function baseConfig(
   over: Partial<UniversalListConfig<Item>> = {}
 ): UniversalListConfig<Item> {
   return {
+    queryKey: ["test-list"],
     fetchPage,
     renderItem: (item) => <Text testID={`row-${item.id}`}>{item.name}</Text>,
     keyExtractor: (item) => item.id,
@@ -127,6 +128,24 @@ describe("UniversalList", () => {
     await waitFor(() => expect(screen.getByTestId("row-a")).toBeTruthy());
     const input = screen.getByTestId("list-search-input");
     expect(input.props.placeholder).toBe("Search institutions");
+  });
+
+  // Regression: typing in search used to remount the header (new
+  // ListHeaderComponent function each render + separate loading tree), so the
+  // input lost focus after the first character on device.
+  it("keeps the same search input mounted while typing and refetching", async () => {
+    const fetchPage = jest.fn(async () => page(itemsP1));
+    renderWithProviders(<UniversalList config={baseConfig(fetchPage)} />);
+    await waitFor(() => expect(screen.getByTestId("row-a")).toBeTruthy());
+    const input = screen.getByTestId("list-search-input");
+
+    fireEvent.changeText(input, "L");
+    expect(screen.getByTestId("list-search-input")).toBe(input);
+    fireEvent.changeText(input, "Le");
+    await waitFor(() =>
+      expect(fetchPage).toHaveBeenCalledWith(expect.objectContaining({ search: "Le" }))
+    );
+    expect(screen.getByTestId("list-search-input")).toBe(input);
   });
 
   it("shows the results count from page.total", async () => {

@@ -210,6 +210,7 @@ export default function FindProgramsScreen({ subNav, embedded }: Props) {
   const list = (
     <UniversalList<ProgramListItem>
       config={{
+        queryKey: ["list", "programs", lang, Object.keys(locationRawMap).length],
         fetchPage,
         title: t("programs"),
         searchPlaceholder: t("searchProgramsPlaceholder"),

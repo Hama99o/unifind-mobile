@@ -235,6 +235,7 @@ export default function FindInstitutionsScreen({ subNav: subNavProp, embedded }:
   const list = (
     <UniversalList<InstitutionListItem>
       config={{
+        queryKey: ["list", "institutions", lang, Object.keys(locationRawMap).length],
         fetchPage,
         title: t("institutions"),
         searchPlaceholder: t("searchPlaceholder"),
