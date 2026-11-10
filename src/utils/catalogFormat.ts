@@ -48,6 +48,15 @@ interface LanguageEntry {
  * Bug fixed: favorites/compare tabs previously rendered "$0–$0"
  * because they had no zero-guard.
  */
+/**
+ * Wrap a formatted amount in Unicode bidi isolates (FSI … PDI) so it renders as
+ * one unit inside RTL text. Without this, Arabic showed "$US ٣٠٠–$US ٢٢٠"
+ * (QA 2026-11-10 BUG-05). Invisible in LTR.
+ */
+export function isolateBidi(text: string): string {
+  return text ? `\u2068${text}\u2069` : text;
+}
+
 export function formatTuitionRange(
   entry: TuitionEntry,
   formatCurrency: (v: number, currency?: "USD" | "LBP") => string
@@ -57,12 +66,13 @@ export function formatTuitionRange(
   // Zero-guard: both explicitly zero → hide (no fake "$0")
   if (minTuition === 0 && maxTuition === 0) return "";
 
+  const fmt = (v: number) => isolateBidi(formatCurrency(v));
   if (minTuition != null && maxTuition != null) {
-    if (minTuition === maxTuition) return formatCurrency(minTuition);
-    return `${formatCurrency(minTuition)}–${formatCurrency(maxTuition)}`;
+    if (minTuition === maxTuition) return fmt(minTuition);
+    return `${fmt(minTuition)}–${fmt(maxTuition)}`;
   }
-  if (minTuition != null) return formatCurrency(minTuition);
-  if (maxTuition != null) return formatCurrency(maxTuition);
+  if (minTuition != null) return fmt(minTuition);
+  if (maxTuition != null) return fmt(maxTuition);
   return "";
 }
 

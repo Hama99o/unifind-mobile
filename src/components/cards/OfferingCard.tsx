@@ -30,6 +30,7 @@ import { RatingStars } from "@/components/cards/RatingStars";
 import { useColors } from "@/hooks/useColors";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
+import { isolateBidi } from "@/utils/catalogFormat";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -138,7 +139,7 @@ export function OfferingCard({
 
   const priceLabel =
     price != null && price > 0
-      ? `${t("from")} ${formatCurrency(price, "USD")}`
+      ? `${t("from")} ${isolateBidi(formatCurrency(price, "USD"))}`
       : null;
 
   const onlineLabel =

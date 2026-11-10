@@ -22,6 +22,7 @@ import { showToast } from "@/stores/toastStore";
 import { router } from "expo-router";
 import { extractPlainTextFromRich } from "@/utils/richText";
 import type { ProgramListItem } from "@/api/programsApiTypes";
+import { isolateBidi } from "@/utils/catalogFormat";
 
 interface Props {
   programs: ProgramListItem[];
@@ -71,8 +72,8 @@ export function SimilarProgramsSection({
     if (minTuition == null && maxTuition == null) return "";
     // Guard: hide zero-tuition (web parity)
     if (minTuition === 0 && maxTuition === 0) return "";
-    if (minTuition === maxTuition) return formatCurrency(maxTuition ?? 0);
-    return `${formatCurrency(minTuition ?? 0)}–${formatCurrency(maxTuition ?? 0)}`;
+    if (minTuition === maxTuition) return isolateBidi(formatCurrency(maxTuition ?? 0));
+    return `${isolateBidi(formatCurrency(minTuition ?? 0))}–${isolateBidi(formatCurrency(maxTuition ?? 0))}`;
   };
 
   return (
