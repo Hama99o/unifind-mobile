@@ -45,6 +45,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useAuthStore } from "@/stores/authStore";
 import { useSelection } from "@/hooks/useSelection";
 import { useOfferingDetail } from "@/hooks/queries/useOfferingDetail";
+import { StickyBookBar } from "@/screens/offering/StickyBookBar";
 import { showToast } from "@/stores/toastStore";
 
 
@@ -160,7 +161,7 @@ export default function OfferingDetailScreen() {
         ref={scrollViewRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 140 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -214,6 +215,17 @@ export default function OfferingDetailScreen() {
 
         <View className="h-8" />
       </ScrollView>
+
+      {/* DESIGN-01: price + Book a Seat stay reachable while scrolling */}
+      <StickyBookBar
+        fromPrice={
+          (nodeOffering?.eventTypes ?? [])
+            .map((e) => e.effectivePrice)
+            .filter((p): p is number => typeof p === "number" && p > 0)
+            .sort((a, b) => a - b)[0] ?? null
+        }
+        onBook={scrollToSpecialists}
+      />
     </SafeAreaView>
   );
 }
