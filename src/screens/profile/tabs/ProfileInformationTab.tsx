@@ -313,10 +313,11 @@ export function ProfileInformationTab() {
           <HStack className={`gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
             <View style={{ width: 130 }}>
               <SelectField
-                placeholder="+Code"
+                placeholder={t("phoneCodePlaceholder")}
                 options={dialCodeOptions}
                 value={dialCode}
                 onChange={setDialCode}
+                searchable
               />
             </View>
             <View className="flex-1">
@@ -346,6 +347,7 @@ export function ProfileInformationTab() {
             options={countryOptions}
             value={country}
             onChange={setCountry}
+            searchable
           />
         </VStack>
 

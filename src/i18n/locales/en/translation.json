@@ -506,6 +506,8 @@
   "Time": "Time",
   "lebanon_time": "(Lebanon Time)",
   "loginFailed": "Sign-in failed. Please try again.",
+  "selectSearch": "Search",
+  "phoneCodePlaceholder": "+Code",
   "loginDeniedTitle": "We couldn't sign you in",
   "loginDenied": "This account couldn't be signed in. Please try again in a moment; if it keeps happening, contact us.",
   "loginVerifyEmail": "Please verify your email: check your inbox, then sign in again.",

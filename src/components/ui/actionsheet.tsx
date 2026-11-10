@@ -13,7 +13,8 @@
  *   ActionsheetSectionHeaderText — section label
  */
 
-import { Modal, View, Pressable, type ViewProps, type PressableProps } from "react-native";
+import { Modal, View, Pressable, useWindowDimensions, type ViewProps, type PressableProps } from "react-native";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { cn } from "@/lib/utils";
 import { Text } from "@/components/ui/text";
 
@@ -60,13 +61,19 @@ export interface ActionsheetContentProps extends ViewProps {
   className?: string;
 }
 
-export function ActionsheetContent({ className, children, ...props }: ActionsheetContentProps) {
+export function ActionsheetContent({ className, children, style, ...props }: ActionsheetContentProps) {
+  // Sit on top of the keyboard while typing in the sheet (search, min/max):
+  // the Modal is not resized on Android edge-to-edge (QA 2026-11-10).
+  const keyboard = useKeyboardHeight();
+  const { height: windowHeight } = useWindowDimensions();
+  const lift = keyboard > 0 ? { bottom: keyboard, maxHeight: (windowHeight - keyboard) * 0.9 } : null;
   return (
     <View
       className={cn(
         "absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl pb-6 max-h-[80%]",
         className
       )}
+      style={[style, lift]}
       {...props}
     >
       {children}

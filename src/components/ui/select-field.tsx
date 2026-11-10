@@ -22,6 +22,7 @@ import { View, FlatList, Pressable } from "react-native";
 import { ChevronDown, Check, X, type LucideIcon } from "lucide-react-native";
 import { Text } from "@/components/ui/text";
 import { Spinner } from "@/components/ui/spinner";
+import { Input, InputField } from "@/components/ui/input";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import {
@@ -56,7 +57,16 @@ export interface SelectFieldProps {
    * is never blocked.
    */
   isLoading?: boolean;
+  /**
+   * Long lists (e.g. ~250 countries): a search box at the top of the sheet
+   * filters options, case- and accent-insensitive. Web: UFSearchableDropDown.
+   */
+  searchable?: boolean;
 }
+
+/** Lowercase and strip accents so "aland" matches "Åland". */
+const fold = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -71,20 +81,28 @@ export function SelectField({
   leadingIcon: LeadingIcon,
   className,
   isLoading = false,
+  searchable = false,
 }: SelectFieldProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const q = fold(query.trim());
+  const visible = searchable && q ? options.filter((o) => fold(o.label).includes(q)) : options;
+  const close = () => {
+    setOpen(false);
+    setQuery("");
+  };
   const { t, isRtl } = useCustomTranslation();
   const colors = useColors();
   const selected = options.find((o) => o.value === value);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
-    setOpen(false);
+    close();
   };
 
   const handleClear = () => {
     onChange("");
-    setOpen(false);
+    close();
   };
 
   return (
@@ -124,10 +142,10 @@ export function SelectField({
       </View>
 
       {/* Actionsheet bottom-sheet */}
-      <Actionsheet isOpen={open} onClose={() => setOpen(false)}>
+      <Actionsheet isOpen={open} onClose={close}>
         {/* Backdrop fills the screen behind the sheet */}
         <View className="flex-1 justify-end">
-          <ActionsheetBackdrop onPress={() => setOpen(false)} />
+          <ActionsheetBackdrop onPress={close} />
           <ActionsheetContent>
             <ActionsheetDragIndicator />
 
@@ -136,7 +154,7 @@ export function SelectField({
               className={`flex-row items-center justify-between px-4 py-3 border-b border-border ${isRtl ? "flex-row-reverse" : ""}`}
             >
               <Text className="font-semibold text-foreground">{placeholder}</Text>
-              <Pressable onPress={() => setOpen(false)} hitSlop={12} accessibilityRole="button">
+              <Pressable onPress={close} hitSlop={12} accessibilityRole="button">
                 <X size={20} color={colors.foreground} />
               </Pressable>
             </View>
@@ -151,9 +169,33 @@ export function SelectField({
               </ActionsheetItem>
             ) : null}
 
+            {searchable ? (
+              <View className="px-4 pt-3 pb-1 w-full">
+                <Input>
+                  <InputField
+                    testID="select-search"
+                    value={query}
+                    onChangeText={setQuery}
+                    placeholder={t("selectSearch")}
+                    autoCorrect={false}
+                    textAlign={isRtl ? "right" : "left"}
+                    accessibilityLabel={t("selectSearch")}
+                  />
+                </Input>
+              </View>
+            ) : null}
+
             {/* Options list */}
             <FlatList
-              data={options}
+              data={visible}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                searchable && q ? (
+                  <Text className="text-sm text-muted-foreground px-4 py-6 text-center">
+                    {t("common.empty")}
+                  </Text>
+                ) : null
+              }
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => {
                 const isSelected = item.value === value;
