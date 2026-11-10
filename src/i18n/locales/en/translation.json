@@ -707,5 +707,6 @@
   "paymentCancelled": "Payment not completed. You can try again from this page.",
   "languageNameEn": "English",
   "languageNameAr": "العربية",
-  "viewMore": "View details"
+  "viewMore": "View details",
+  "invalidEmail": "Please enter a valid email address."
 }

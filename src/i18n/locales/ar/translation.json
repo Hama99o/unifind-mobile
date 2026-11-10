@@ -707,5 +707,6 @@
   "paymentCancelled": "لم يكتمل الدفع. يمكنك المحاولة مجدداً من هذه الصفحة.",
   "languageNameEn": "English",
   "languageNameAr": "العربية",
-  "viewMore": "عرض التفاصيل"
+  "viewMore": "عرض التفاصيل",
+  "invalidEmail": "يرجى إدخال بريد إلكتروني صالح."
 }

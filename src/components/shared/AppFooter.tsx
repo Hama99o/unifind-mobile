@@ -104,7 +104,10 @@ function NavSection({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function AppFooter() {
+/** Simple shape check before calling the API (server validates too). */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+export function AppFooter({ onNewsletterFocus }: { onNewsletterFocus?: () => void } = {}) {
   const { t, isRtl } = useCustomTranslation();
   const { formatNumber } = useLocalization();
   const router = useRouter();
@@ -112,9 +115,15 @@ export function AppFooter() {
 
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleSubscribe = async () => {
-    if (!email.trim()) return;
+    if (!email.trim() || subscribing) return;
+    if (!EMAIL_RE.test(email.trim())) {
+      setEmailError(t("invalidEmail"));
+      return;
+    }
+    setEmailError(null);
     setSubscribing(true);
     try {
       const res = await subscribeNewsletter(email.trim());
@@ -247,15 +256,28 @@ export function AppFooter() {
         <Input className="bg-white/10 border-white/30">
           <InputField
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(v) => {
+              setEmail(v);
+              if (emailError) setEmailError(null);
+            }}
             placeholder={t("emailPlaceHolder")}
             placeholderTextColor={colors.onOverlay + "66"}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="email"
+            returnKeyType="send"
+            onSubmitEditing={handleSubscribe}
+            onFocus={onNewsletterFocus}
+            testID="newsletter-email"
             className="text-white"
           />
         </Input>
+        {emailError && (
+          <Text accessibilityRole="alert" className="text-sm text-destructive-foreground bg-destructive/80 rounded-md px-2 py-1">
+            {emailError}
+          </Text>
+        )}
 
         {subscribing ? (
           <View className="h-12 items-center justify-center">
