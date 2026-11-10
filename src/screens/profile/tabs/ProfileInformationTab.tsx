@@ -85,9 +85,15 @@ function LoadingSkeleton() {
 
 // ─── Field label component ─────────────────────────────────────────────────────
 
-function FieldLabel({ label, required }: { label: string; required?: boolean }) {
+export function FieldLabel({ label, required }: { label: string; required?: boolean }) {
+  // Follows the reading direction like the inputs (ar was left-aligned).
+  const { isRtl } = useCustomTranslation();
   return (
-    <HStack className="gap-1 mb-1">
+    <HStack
+      className="gap-1 mb-1"
+      style={{ flexDirection: isRtl ? "row-reverse" : "row" }}
+      testID="field-label"
+    >
       <Text className="text-sm font-semibold text-foreground">{label}</Text>
       {required && <Text className="text-sm text-destructive">*</Text>}
     </HStack>
@@ -96,11 +102,13 @@ function FieldLabel({ label, required }: { label: string; required?: boolean }) 
 
 // ─── Section heading ──────────────────────────────────────────────────────────
 
-function SectionHeading({ label }: { label: string }) {
+export function SectionHeading({ label }: { label: string }) {
+  const { isRtl } = useCustomTranslation();
   return (
     <Text
       className="text-xs font-semibold text-muted-foreground mb-1"
-      style={{ textTransform: "uppercase", letterSpacing: 0.8 }}
+      style={{ textTransform: "uppercase", letterSpacing: 0.8, textAlign: isRtl ? "right" : "left" }}
+      testID="section-heading"
     >
       {label}
     </Text>

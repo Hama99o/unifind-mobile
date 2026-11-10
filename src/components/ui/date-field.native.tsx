@@ -42,7 +42,7 @@ export function DateField({
   required = false,
   disabled = false,
 }: DateFieldProps) {
-  const { t } = useCustomTranslation();
+  const { t, isRtl } = useCustomTranslation();
   const { formatDate } = useLocalization();
   const [show, setShow] = useState(false);
 
@@ -58,7 +58,11 @@ export function DateField({
   return (
     <VStack className="gap-1">
       {label ? (
-        <HStack className="gap-1">
+        <HStack
+          className="gap-1"
+          style={{ flexDirection: isRtl ? "row-reverse" : "row" }}
+          testID="date-field-label"
+        >
           <Text className="text-sm font-semibold text-foreground">{label}</Text>
           {required && (
             <Text className="text-sm text-destructive">*</Text>

@@ -10,7 +10,9 @@
  * RTL-safe, theme tokens only.
  */
 
-import { ScrollView, Pressable, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { ScrollView, Pressable, View, type LayoutRectangle } from "react-native";
+import { scrollXToReveal } from "@/utils/scrollIntoView";
 import Animated from "react-native-reanimated";
 import {
   User, Shield, BookOpen, Activity,
@@ -148,6 +150,24 @@ function TabPillItem({
 export function ProfileTabBar({ activeTab, onTabChange }: ProfileTabBarProps) {
   const { t, isRtl } = useCustomTranslation();
 
+  // Keep the active tab on screen: in Arabic the reversed row opened scrolled
+  // to the far end with the active tab hidden (QA 2026-11-10).
+  const scrollRef = useRef<ScrollView>(null);
+  const layouts = useRef<Record<string, LayoutRectangle>>({});
+  const scrollX = useRef(0);
+  const viewport = useRef(0);
+  const content = useRef(0);
+  const reveal = (animated: boolean) => {
+    const item = layouts.current[activeTab];
+    if (!item || !viewport.current || !content.current) return;
+    const x = scrollXToReveal(item, scrollX.current, viewport.current, content.current, 16);
+    if (x !== scrollX.current) {
+      scrollX.current = x;
+      scrollRef.current?.scrollTo({ x, animated });
+    }
+  };
+  useEffect(() => reveal(true), [activeTab, isRtl]);
+
   const handleSignOut = () => {
     confirmAlert(t("signOut"), t("signOutConfirmation"), [
       { text: t("common.cancel"), style: "cancel" },
@@ -166,8 +186,21 @@ export function ProfileTabBar({ activeTab, onTabChange }: ProfileTabBarProps) {
       {/* Tab scroll card */}
       <View className="bg-card rounded-2xl overflow-hidden mx-4 mt-4 shadow-sm">
         <ScrollView
+          ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={32}
+          onScroll={(e) => {
+            scrollX.current = e.nativeEvent.contentOffset.x;
+          }}
+          onLayout={(e) => {
+            viewport.current = e.nativeEvent.layout.width;
+            reveal(false);
+          }}
+          onContentSizeChange={(w) => {
+            content.current = w;
+            reveal(false);
+          }}
           contentContainerStyle={{
             paddingHorizontal: 4,
             paddingVertical: 4,
@@ -175,14 +208,21 @@ export function ProfileTabBar({ activeTab, onTabChange }: ProfileTabBarProps) {
           }}
         >
           {TABS.map((tab) => (
-            <TabPillItem
+            <View
               key={tab.id}
+              onLayout={(e) => {
+                layouts.current[tab.id] = e.nativeEvent.layout;
+                if (tab.id === activeTab) reveal(false);
+              }}
+            >
+            <TabPillItem
               tab={tab}
               isActive={tab.id === activeTab}
               onPress={() => onTabChange(tab.id)}
               isRtl={isRtl}
               t={t}
             />
+            </View>
           ))}
         </ScrollView>
       </View>
