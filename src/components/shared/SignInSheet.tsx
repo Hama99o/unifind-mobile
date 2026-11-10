@@ -13,7 +13,6 @@
  * Consumed via: useSignInSheet() hook or SignInSheetProvider.
  */
 
-import { useState } from "react";
 import { View, Pressable } from "react-native";
 import { X, ClipboardList, Heart, ArrowLeftRight } from "lucide-react-native";
 import {
@@ -30,9 +29,8 @@ import { HStack, VStack } from "@/components/ui/box";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { IconCircle } from "@/components/shared/IconCircle";
-import { authService } from "@/services/authService";
+import { useAuthActions } from "@/auth/useAuthActions";
 import { useSignInSheet } from "@/auth/useSignInSheet";
-import { showToast } from "@/stores/toastStore";
 import { useAuthStore } from "@/stores/authStore";
 import { Logo } from "@/components/shared/Logo";
 
@@ -63,25 +61,11 @@ export function SignInSheet() {
   const { t, isRtl } = useCustomTranslation();
   const { isOpen, close } = useSignInSheet();
   const colors = useColors();
-  const [busy, setBusy] = useState<null | "in" | "up">(null);
-
-  // Run the Auth0 flow; surface failures as a toast instead of an unhandled
-  // rejection (which previously "broke" silently). Cancel/dismiss does not throw.
-  const run = async (which: "in" | "up", fn: () => Promise<void>) => {
-    if (busy) return;
-    setBusy(which);
-    try {
-      await fn();
+  const { busy, signIn: handleSignIn, createAccount: handleCreateAccount } = useAuthActions(
+    () => {
       if (useAuthStore.getState().isLoggedIn) close();
-    } catch (e) {
-      showToast(t("loginFailed"));
-    } finally {
-      setBusy(null);
     }
-  };
-
-  const handleSignIn = () => run("in", () => authService.login());
-  const handleCreateAccount = () => run("up", () => authService.signup());
+  );
 
   return (
     <Actionsheet isOpen={isOpen} onClose={close}>

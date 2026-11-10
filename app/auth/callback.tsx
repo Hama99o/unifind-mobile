@@ -7,8 +7,9 @@
  * internally (on iOS via SFSafariViewController, on Android via Custom Tabs)
  * before this route is ever rendered, so the screen is a no-op in practice.
  *
- * It renders a brief spinner in case the user navigates here manually or the
- * deep-link interception is delayed, then redirects home.
+ * On Android it DOES render (Custom Tabs hands the deep link to the router).
+ * It shows a brief spinner, then returns to the screen the user signed in
+ * from (offering, favorites, compare…); Home only when there is no history.
  *
  * Platform: iOS + Android. The web equivalent is app/auth/callback.web.tsx.
  */
@@ -27,10 +28,12 @@ export default function AuthCallbackNative() {
   const { t } = useCustomTranslation();
 
   useEffect(() => {
-    // Redirect home — on native the in-app browser handles the code exchange
-    // before this route is rendered. This is a safety fallback only.
+    // The code exchange is done by promptAsync; this route only has to get out
+    // of the way. Going back keeps the user where they were (QA 2026-11-10:
+    // always replacing to Home lost their place after every sign-in).
     const timeout = setTimeout(() => {
-      router.replace("/(main)/(tabs)/home");
+      if (router.canGoBack()) router.back();
+      else router.replace("/(main)/(tabs)/home");
     }, 1500);
     return () => clearTimeout(timeout);
   }, [router]);

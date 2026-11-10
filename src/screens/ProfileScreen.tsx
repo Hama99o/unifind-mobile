@@ -20,7 +20,7 @@ import { Text } from "@/components/ui/text";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { useAuthStore } from "@/stores/authStore";
-import { useSignInSheet } from "@/auth/useSignInSheet";
+import { useAuthActions } from "@/auth/useAuthActions";
 
 import { ProfileHeader } from "./profile/ProfileHeader";
 import { ProfileTabBar, type ProfileTab } from "./profile/ProfileTabBar";
@@ -36,10 +36,11 @@ import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 
 // ─── Logged-out view ──────────────────────────────────────────────────────────
 
-function SignedOutProfile() {
+export function SignedOutProfile() {
   const { t } = useCustomTranslation();
   const colors = useColors();
-  const { open } = useSignInSheet();
+  // Straight to Auth0: the SignInSheet would repeat these same two buttons.
+  const { busy, signIn, createAccount } = useAuthActions();
 
   return (
     <View className="flex-1 items-center justify-center px-8">
@@ -59,12 +60,19 @@ function SignedOutProfile() {
       </Text>
 
       <VStack className="gap-3 w-full">
-        <Button label={t("signIn")} action="primary" onPress={open} testID="profile-gate-signin" />
+        <Button
+          label={t("signIn")}
+          action="primary"
+          onPress={signIn}
+          disabled={busy !== null}
+          testID="profile-gate-signin"
+        />
         <Button
           label={t("createAccount")}
           action="primary"
           variant="outline"
-          onPress={open}
+          onPress={createAccount}
+          disabled={busy !== null}
           testID="profile-gate-create-account"
         />
       </VStack>
