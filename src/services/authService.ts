@@ -400,7 +400,7 @@ async function getAuthCode(
       // an error. Treat it like closing the browser (measured 2026-11-10).
       if (errCode === "access_denied" && desc === CONSENT_DECLINED) return null;
       if (errCode === "access_denied") {
-        forceLoginForm = true;
+        await setForceLoginForm(true);
         throw new AuthDeniedError(desc);
       }
       throw new Error(`Auth0 error: ${desc}`);
@@ -448,19 +448,27 @@ async function getAuthCode(
  *            (getAuthCode) captures the code even if promptAsync misses it.
  */
 /**
- * Set when Auth0 denied the account (access_denied, e.g. a tenant rule). Its
- * SSO cookie would otherwise auto-submit that same account on every later
- * attempt, so the user never sees the form again and cannot switch account.
- * While set, we add prompt=login; cleared once a login gets through. (Not the
- * default: prompt=login hides Google SSO on Universal Login.)
+ * When set, the next login adds prompt=login so Auth0 shows the form instead
+ * of silently reusing its SSO cookie. Set after Auth0 denied an account (its
+ * cookie would auto-submit the same account forever) and after sign-out (the
+ * cookie survives it: native does not call /v2/logout). Persisted so it holds
+ * across an app restart; cleared once a login gets through. Not the default:
+ * prompt=login hides Google SSO on Universal Login.
  */
-let forceLoginForm = false;
+export const FORCE_LOGIN_FORM_KEY = "uf.forceLoginForm";
+const setForceLoginForm = (on: boolean) =>
+  on
+    ? secureStorage.set(FORCE_LOGIN_FORM_KEY, "1")
+    : secureStorage.remove(FORCE_LOGIN_FORM_KEY);
+const shouldForceLoginForm = async () =>
+  (await secureStorage.get(FORCE_LOGIN_FORM_KEY)) === "1";
 
 /** Auth0's error_description when the user declines the consent screen. */
 const CONSENT_DECLINED = "User did not authorize the request";
 
 async function performLogin(extraParams?: Record<string, string>): Promise<void> {
   const redirectUri = getRedirectUri();
+  const forceLoginForm = await shouldForceLoginForm();
 
   const request = new AuthSession.AuthRequest({
     clientId: AUTH0_CLIENT_ID,
@@ -510,7 +518,7 @@ async function performLogin(extraParams?: Record<string, string>): Promise<void>
   const user = await hydrateUserFromNode(baseUser);
 
   await useAuthStore.getState().setSession(accessToken, user);
-  forceLoginForm = false;
+  await setForceLoginForm(false);
   if (__DEV__) console.log("[auth] ✅ session set — logged in as", user?.email ?? user?.sub ?? "?");
 }
 
@@ -584,29 +592,19 @@ export const authService = {
     // Clear local state first so the UI reacts immediately.
     await useAuthStore.getState().logout();
 
-    const returnTo =
-      Platform.OS === "web" && typeof window !== "undefined"
-        ? window.location.origin
-        : AuthSession.makeRedirectUri({ scheme: "unifind", path: "auth/callback" });
+    // The next Sign In must ask for credentials: on native the Auth0 SSO
+    // cookie outlives sign-out (see FORCE_LOGIN_FORM_KEY).
+    await setForceLoginForm(true);
 
-    const logoutUrl = new URL(`https://${AUTH0_DOMAIN}/v2/logout`);
-    logoutUrl.searchParams.set("client_id", AUTH0_CLIENT_ID);
-    logoutUrl.searchParams.set("returnTo", returnTo);
-
-    try {
-      if (Platform.OS === "web") {
-        if (typeof window !== "undefined") {
-          window.location.assign(logoutUrl.toString());
-        }
-      } else {
-        // Native: open in-app browser to clear Auth0 session cookie, then return.
-        await WebBrowser.openAuthSessionAsync(
-          logoutUrl.toString(),
-          AuthSession.makeRedirectUri({ scheme: "unifind", path: "auth/callback" })
-        );
-      }
-    } catch {
-      // Non-fatal: local session is already cleared above.
+    // Web: same as the web app — Auth0 /v2/logout back to the site origin.
+    // Native: no /v2/logout. unifind:// is not an Allowed Logout URL on the
+    // tenant, so it showed Auth0's "Oops!, something went wrong" page (QA
+    // 2026-11-10); the forced login form covers the surviving cookie.
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const logoutUrl = new URL(`https://${AUTH0_DOMAIN}/v2/logout`);
+      logoutUrl.searchParams.set("client_id", AUTH0_CLIENT_ID);
+      logoutUrl.searchParams.set("returnTo", window.location.origin);
+      window.location.assign(logoutUrl.toString());
     }
   },
 };

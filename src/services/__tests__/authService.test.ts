@@ -24,9 +24,10 @@
  */
 
 import { AuthDeniedError } from "@/auth/authErrors";
-import { authService, isTokenExpired, fetchNodeUserInfo } from "@/services/authService";
+import { authService, isTokenExpired, fetchNodeUserInfo, FORCE_LOGIN_FORM_KEY } from "@/services/authService";
 import * as AuthSession from "expo-auth-session";
 import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { nodeApi } from "@/api/nodeApi";
 import { useAuthStore } from "@/stores/authStore";
 import { secureStorage, TOKEN_KEYS } from "@/utils/secure-storage";
@@ -581,5 +582,33 @@ describe("authService.logout", () => {
     expect(state.user).toBeNull();
     expect(await secureStorage.get(TOKEN_KEYS.access)).toBeNull();
     expect(await secureStorage.get(TOKEN_KEYS.refresh)).toBeNull();
+  });
+
+  it("does not open Auth0 /v2/logout on native (it errors: unifind:// is not an allowed logout URL)", async () => {
+    // QA 2026-11-10: Sign Out showed Auth0's "Oops!, something went wrong" page.
+    (WebBrowser.openAuthSessionAsync as jest.Mock).mockClear();
+    await authService.logout();
+    expect(WebBrowser.openAuthSessionAsync).not.toHaveBeenCalled();
+  });
+
+  it("forces the login form on the next sign-in, even after an app restart (persisted)", async () => {
+    // The Auth0 SSO cookie survives sign-out: without this the next Sign In
+    // silently logs in as the previous user (measured on the device).
+    await authService.logout();
+    expect(await secureStorage.get(FORCE_LOGIN_FORM_KEY)).toBe("1");
+    let extra: Record<string, string> | undefined;
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      (config: { extraParams?: Record<string, string> }) => {
+        extra = config.extraParams;
+        return {
+          promptAsync: jest.fn(async () => ({ type: "cancel" })),
+          makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
+          codeVerifier: "v",
+          state: "s",
+        };
+      }
+    );
+    await authService.login();
+    expect(extra?.prompt).toBe("login");
   });
 });
