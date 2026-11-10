@@ -3,9 +3,12 @@
  * that blocks unverified emails. Thrown by authService so the UI can explain
  * it instead of a generic "Sign-in failed".
  *
- * Measured 2026-11-10 on the DEV tenant: an unverified sign-up returns
- * error_description "Unauthorized" — Auth0 does not say WHY, so only a
- * description that names verification gets the explicit verify-email copy.
+ * Measured 2026-11-10 on the DEV tenant: a new account was denied with
+ * error_description "Unauthorized" before its first successful login, while
+ * an UNVERIFIED email (email_verified=false) later logged in fine — so that
+ * denial is not the verify-email rule and Auth0 does not say why. Only a
+ * description that names verification gets the explicit verify-email copy;
+ * everything else gets neutral copy. Consent "Decline" is a silent cancel.
  */
 export class AuthDeniedError extends Error {
   readonly description: string;

@@ -396,6 +396,9 @@ async function getAuthCode(
           ? ((result.error as { description?: string }).description ??
             "Unknown Auth0 error")
           : String(result.error);
+      // The user tapped Decline on Auth0's consent screen: their choice, not
+      // an error. Treat it like closing the browser (measured 2026-11-10).
+      if (errCode === "access_denied" && desc === CONSENT_DECLINED) return null;
       if (errCode === "access_denied") {
         forceLoginForm = true;
         throw new AuthDeniedError(desc);
@@ -453,6 +456,9 @@ async function getAuthCode(
  */
 let forceLoginForm = false;
 
+/** Auth0's error_description when the user declines the consent screen. */
+const CONSENT_DECLINED = "User did not authorize the request";
+
 async function performLogin(extraParams?: Record<string, string>): Promise<void> {
   const redirectUri = getRedirectUri();
 
@@ -491,6 +497,8 @@ async function performLogin(extraParams?: Record<string, string>): Promise<void>
     throw e;
   }
   if (__DEV__) console.log("[auth] exchange OK, hasAccessToken =", !!tokenData.access_token);
+  // Diagnoses access_denied causes (unverified email vs consent) during QA.
+  if (__DEV__) console.log("[auth] email_verified =", (tokenData.user as { email_verified?: unknown } | undefined)?.email_verified);
 
   const accessToken = tokenData.access_token;
   await secureStorage.set(TOKEN_KEYS.access, accessToken);

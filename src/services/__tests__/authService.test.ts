@@ -385,6 +385,43 @@ describe("authService.login after Auth0 denied the account", () => {
   });
 });
 
+describe("authService.login when the user declines the Auth0 consent screen", () => {
+  it("is a silent cancel: no error, and the next attempt is not forced to the login form", async () => {
+    // Measured 2026-11-10: Decline → access_denied "User did not authorize the request".
+    const seen: Array<Record<string, string> | undefined> = [];
+    const req = (result: unknown) =>
+      (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+        (config: { extraParams?: Record<string, string> }) => {
+          seen.push(config.extraParams);
+          return {
+            promptAsync: jest.fn(async () => result),
+            makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
+            codeVerifier: "v",
+            state: "s",
+          };
+        }
+      );
+    // Start from a clean flag: a successful login resets it.
+    req({ type: "success", params: { code: "c" } });
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ access_token: "T", user: { sub: "auth0|x" }, user_metadata: {} }),
+    })) as unknown as typeof fetch;
+    (nodeApi.get as jest.Mock).mockResolvedValueOnce({ data: { data: {} } });
+    await authService.login();
+    seen.length = 0;
+    req({
+      type: "error",
+      error: { code: "access_denied", description: "User did not authorize the request" },
+      params: { error: "access_denied", error_description: "User did not authorize the request" },
+    });
+    await expect(authService.login()).resolves.toBeUndefined();
+    req({ type: "cancel" });
+    await authService.login();
+    expect(seen[1]?.prompt).toBeUndefined();
+  });
+});
+
 // ─── signup ────────────────────────────────────────────────────────────────
 
 describe("authService.signup", () => {
