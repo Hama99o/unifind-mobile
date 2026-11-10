@@ -26,10 +26,10 @@ describe("ProgramExplorerHubScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("mounts without throwing and renders the hero breadcrumb, title and tabs", async () => {
+  it("mounts without throwing and renders the hero title and tabs (no breadcrumb)", async () => {
     renderWithProviders(<ProgramExplorerHubScreen />);
-    // Hero breadcrumb home label + hero title (t keys).
-    expect(screen.getByText("tabs.home")).toBeTruthy();
+    // Hero title (t key); no breadcrumb on a bottom-tab root screen.
+    expect(screen.queryByText("tabs.home")).toBeNull();
     expect(screen.getByText("findPrograms")).toBeTruthy();
     // Tab switcher labels.
     expect(screen.getByText("degrees")).toBeTruthy();

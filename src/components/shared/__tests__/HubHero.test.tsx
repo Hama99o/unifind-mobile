@@ -17,7 +17,7 @@ import {
 const t = (k: string) => k;
 
 describe("HubHero", () => {
-  it("renders breadcrumb (home key + trailing label), title and both slots", () => {
+  it("renders title and both slots, with no breadcrumb (tab root screen)", () => {
     render(
       <HubHero
         homeLabelKey="tabs.home"
@@ -29,8 +29,9 @@ describe("HubHero", () => {
         searchSlot={<RNText>SEARCH_SLOT</RNText>}
       />
     );
-    expect(screen.getByText("tabs.home")).toBeTruthy();
-    expect(screen.getByText("Program Explorer")).toBeTruthy();
+    // No breadcrumb on bottom-tab root screens (you're already on the page).
+    expect(screen.queryByText("tabs.home")).toBeNull();
+    expect(screen.queryByText("Program Explorer")).toBeNull();
     expect(screen.getByText("Find your program")).toBeTruthy();
     expect(screen.getByText("TABS_SLOT")).toBeTruthy();
     expect(screen.getByText("SEARCH_SLOT")).toBeTruthy();

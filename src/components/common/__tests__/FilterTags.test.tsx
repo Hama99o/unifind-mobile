@@ -13,7 +13,7 @@
  *   PREPENDED: `${unit}${n}` (quirk: unit comes before the number).
  * - Pressing a chip calls onRemove(key, value). The whole chip is the tap target;
  *   the X icon is visual-only.
- * - A "clearSelection" chip appears only when there is MORE THAN ONE chip; pressing it
+ * - A "clear_all_filters" chip (web UFFilterTags) appears only when there is MORE THAN ONE chip; pressing it
  *   calls onClearAll.
  * - Renders nothing (null) when there are no active chips.
  */
@@ -129,7 +129,7 @@ describe("FilterTags", () => {
         onClearAll={jest.fn()}
       />
     );
-    expect(screen.queryByText("clearSelection")).toBeNull();
+    expect(screen.queryByText("clear_all_filters")).toBeNull();
   });
 
   it("shows the clear-all chip and fires onClearAll when more than one chip", () => {
@@ -142,7 +142,7 @@ describe("FilterTags", () => {
         onClearAll={onClearAll}
       />
     );
-    const clear = screen.getByText("clearSelection");
+    const clear = screen.getByText("clear_all_filters");
     expect(clear).toBeTruthy();
     fireEvent.press(clear);
     expect(onClearAll).toHaveBeenCalledTimes(1);

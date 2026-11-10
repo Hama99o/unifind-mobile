@@ -273,8 +273,9 @@ describe("UniversalList", () => {
     // Open the drawer (Modal renders children only when visible).
     fireEvent.press(screen.getByTestId("filter-drawer-trigger"));
 
-    // The drawer body now shows the options (sections expanded by default).
-    await waitFor(() => expect(screen.getByText("Private")).toBeTruthy());
+    // Sections start collapsed (web default): expand "Type", then pick.
+    await waitFor(() => expect(screen.getByText("Type")).toBeTruthy());
+    fireEvent.press(screen.getByText("Type"));
 
     fireEvent.press(screen.getByText("Private"));
     fireEvent.press(screen.getByTestId("filter-drawer-apply"));

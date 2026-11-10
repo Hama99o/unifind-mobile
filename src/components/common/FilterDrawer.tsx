@@ -27,6 +27,7 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
+import { useLocalization } from "@/hooks/useLocalization";
 import { FilterDrawerBody } from "@/components/common/FilterDrawerBody";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -89,6 +90,7 @@ export function FilterDrawer({
 }: Props) {
   const { t, isRtl } = useCustomTranslation();
   const colors = useColors();
+  const { formatNumber } = useLocalization();
 
   // Local working copy — committed on "Show Results"
   const [localValues, setLocalValues] = useState<FilterValues>(values);
@@ -200,17 +202,12 @@ export function FilterDrawer({
     onClearAll();
   };
 
-  const activeCount = Object.values(localValues).filter(
-    (v) =>
-      Array.isArray(v) ? v.length > 0 : v !== null && v !== undefined && v !== false
-  ).length;
-
+  // Web: t('showResults', { val }) → "Show 1,234 Results". Number goes through
+  // useLocalization (Arabic digits in ar), never raw toLocaleString.
   const footerLabel =
     resultsCount !== undefined
-      ? `${t("showResults")} (${resultsCount.toLocaleString()})`
-      : activeCount > 0
-      ? `${t("showResults")} (${activeCount})`
-      : t("showResults");
+      ? t("showResults", { val: formatNumber(resultsCount) })
+      : t("showResultsPlain");
 
   return (
     <Actionsheet isOpen={isOpen} onClose={onClose}>
