@@ -16,7 +16,7 @@ import "@/services/authService";
 import { useEffect, useState } from "react";
 import { CrashScreen } from "@/components/shared/CrashScreen";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
-import { View, StyleSheet } from "react-native";
+import { AppState, View, StyleSheet, type AppStateStatus } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,7 +25,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "@/stores/authStore";
@@ -37,7 +37,20 @@ import { useTokenForegroundRefresh } from "@/auth/useTokenForegroundRefresh";
 import { Spinner } from "@/components/ui/spinner";
 import { Logo } from "@/components/shared/Logo";
 
-const queryClient = new QueryClient();
+// Defaults: cached data is shown at once on revisit and refreshed in the
+// background once stale (QA 2026-11-10 RQ-02). 5 min fresh, kept 30 min.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 5 * 60_000, gcTime: 30 * 60_000, retry: 1, refetchOnWindowFocus: true },
+  },
+});
+
+// React Native has no window focus: map app foreground → React Query focus so
+// stale queries refresh when the user comes back to the app.
+focusManager.setEventListener((handleFocus) => {
+  const sub = AppState.addEventListener("change", (s: AppStateStatus) => handleFocus(s === "active"));
+  return () => sub.remove();
+});
 
 function AppServices() {
   useTokenForegroundRefresh();
