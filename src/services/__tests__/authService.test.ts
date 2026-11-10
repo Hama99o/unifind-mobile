@@ -334,6 +334,54 @@ describe("authService.login", () => {
   });
 });
 
+// ─── account switch after a denial ───────────────────────────────────────────
+
+describe("authService.login after Auth0 denied the account", () => {
+  /** AuthRequest mock that records extraParams and resolves with `result`. */
+  const mockRequest = (result: unknown, seen: Array<Record<string, string> | undefined>) =>
+    (AuthSession.AuthRequest as unknown as jest.Mock).mockImplementationOnce(
+      (config: { extraParams?: Record<string, string> }) => {
+        seen.push(config.extraParams);
+        return {
+          promptAsync: jest.fn(async () => result),
+          makeAuthUrlAsync: jest.fn(async () => "https://mock.auth/"),
+          codeVerifier: "v",
+          state: "s",
+        };
+      }
+    );
+  const denied = {
+    type: "error",
+    error: { code: "access_denied", description: "Unauthorized" },
+    params: { error: "access_denied" },
+  };
+
+  it("forces the login form (prompt=login) on the next attempt, so the user can switch account", async () => {
+    // QA 2026-11-10: the Auth0 SSO cookie kept auto-submitting the denied
+    // account, so every later Sign In failed without ever showing the form.
+    const seen: Array<Record<string, string> | undefined> = [];
+    mockRequest(denied, seen);
+    await expect(authService.login()).rejects.toThrow("Unauthorized");
+    mockRequest({ type: "cancel" }, seen);
+    await authService.login();
+    expect(seen[0]?.prompt).toBeUndefined();
+    expect(seen[1]?.prompt).toBe("login");
+  });
+
+  it("keeps forcing the form until a login gets through (a cancel does not reset it)", async () => {
+    const seen: Array<Record<string, string> | undefined> = [];
+    mockRequest(denied, seen);
+    await expect(authService.login()).rejects.toThrow();
+    mockRequest({ type: "cancel" }, seen);
+    await authService.login();
+    mockRequest({ type: "cancel" }, seen);
+    await authService.signup();
+    expect(seen[1]?.prompt).toBe("login");
+    expect(seen[2]?.prompt).toBe("login");
+    expect(seen[2]?.screen_hint).toBe("signup");
+  });
+});
+
 // ─── signup ────────────────────────────────────────────────────────────────
 
 describe("authService.signup", () => {

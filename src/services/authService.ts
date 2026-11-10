@@ -387,6 +387,10 @@ async function getAuthCode(
       );
     }
     if (result.type === "error" && result.error) {
+      const errCode =
+        (result.error as { code?: string }).code ??
+        (result as { params?: Record<string, string> }).params?.error;
+      if (errCode === "access_denied") forceLoginForm = true;
       const desc =
         typeof result.error === "object" && result.error !== null
           ? ((result.error as { description?: string }).description ??
@@ -436,6 +440,15 @@ async function getAuthCode(
  *            which redirects to unifind://auth/callback; a deep-link fallback
  *            (getAuthCode) captures the code even if promptAsync misses it.
  */
+/**
+ * Set when Auth0 denied the account (access_denied, e.g. a tenant rule). Its
+ * SSO cookie would otherwise auto-submit that same account on every later
+ * attempt, so the user never sees the form again and cannot switch account.
+ * While set, we add prompt=login; cleared once a login gets through. (Not the
+ * default: prompt=login hides Google SSO on Universal Login.)
+ */
+let forceLoginForm = false;
+
 async function performLogin(extraParams?: Record<string, string>): Promise<void> {
   const redirectUri = getRedirectUri();
 
@@ -448,6 +461,7 @@ async function performLogin(extraParams?: Record<string, string>): Promise<void>
     extraParams: {
       audience: AUTH0_AUDIENCE,
       ...extraParams,
+      ...(forceLoginForm ? { prompt: "login" } : {}),
     },
   });
 
@@ -484,6 +498,7 @@ async function performLogin(extraParams?: Record<string, string>): Promise<void>
   const user = await hydrateUserFromNode(baseUser);
 
   await useAuthStore.getState().setSession(accessToken, user);
+  forceLoginForm = false;
   if (__DEV__) console.log("[auth] ✅ session set — logged in as", user?.email ?? user?.sub ?? "?");
 }
 
