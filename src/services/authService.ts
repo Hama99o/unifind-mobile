@@ -22,6 +22,7 @@
  *   Allowed Logout URLs:   unifind://auth/callback
  */
 
+import { AuthDeniedError } from "@/auth/authErrors";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
@@ -390,12 +391,15 @@ async function getAuthCode(
       const errCode =
         (result.error as { code?: string }).code ??
         (result as { params?: Record<string, string> }).params?.error;
-      if (errCode === "access_denied") forceLoginForm = true;
       const desc =
         typeof result.error === "object" && result.error !== null
           ? ((result.error as { description?: string }).description ??
             "Unknown Auth0 error")
           : String(result.error);
+      if (errCode === "access_denied") {
+        forceLoginForm = true;
+        throw new AuthDeniedError(desc);
+      }
       throw new Error(`Auth0 error: ${desc}`);
     }
 

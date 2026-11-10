@@ -9,6 +9,8 @@ import { useRef, useState } from "react";
 import { authService } from "@/services/authService";
 import { showToast } from "@/stores/toastStore";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
+import { confirmAlert } from "@/components/ui/alert-dialog";
+import { AuthDeniedError } from "@/auth/authErrors";
 
 export type AuthAction = "in" | "up";
 
@@ -25,8 +27,21 @@ export function useAuthActions(onDone?: () => void) {
     try {
       await (which === "in" ? authService.login() : authService.signup());
       onDone?.();
-    } catch {
-      showToast(t("loginFailed"));
+    } catch (e) {
+      if (e instanceof AuthDeniedError) {
+        // A dialog, not a 2.4 s toast: the user has to act on it (verify the
+        // email) and may want to retry — the retry shows the login form.
+        confirmAlert(
+          t("loginDeniedTitle"),
+          t(e.isUnverifiedEmail ? "loginVerifyEmail" : "loginDenied"),
+          [
+            { text: t("common.close"), style: "cancel" },
+            { text: t("signInAgain"), onPress: () => void run(which) },
+          ]
+        );
+      } else {
+        showToast(t("loginFailed"));
+      }
     } finally {
       running.current = false;
       setBusy(null);

@@ -23,6 +23,7 @@
  *   logout           — clears local session.
  */
 
+import { AuthDeniedError } from "@/auth/authErrors";
 import { authService, isTokenExpired, fetchNodeUserInfo } from "@/services/authService";
 import * as AuthSession from "expo-auth-session";
 import * as Linking from "expo-linking";
@@ -361,7 +362,9 @@ describe("authService.login after Auth0 denied the account", () => {
     // account, so every later Sign In failed without ever showing the form.
     const seen: Array<Record<string, string> | undefined> = [];
     mockRequest(denied, seen);
-    await expect(authService.login()).rejects.toThrow("Unauthorized");
+    const err = await authService.login().catch((e) => e);
+    expect(err).toBeInstanceOf(AuthDeniedError);
+    expect(err.description).toBe("Unauthorized");
     mockRequest({ type: "cancel" }, seen);
     await authService.login();
     expect(seen[0]?.prompt).toBeUndefined();
