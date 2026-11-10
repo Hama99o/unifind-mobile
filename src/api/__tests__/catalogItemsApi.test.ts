@@ -76,14 +76,37 @@ describe("catalogItemsApi.getProgramsByIds", () => {
     expect(mockGet).not.toHaveBeenCalled();
   });
 
-  it("builds a numeric id $in filter (not documentId)", async () => {
+  it("builds a numeric id $in filter (not documentId) on the EN entries", async () => {
     mockGet.mockResolvedValueOnce({ data: { data: [] } });
     await catalogItemsApi.getProgramsByIds(["10", "11"], "ar");
     const url: string = mockGet.mock.calls[0][0];
     expect(url).toContain("filters[id][$in][0]=10");
     expect(url).toContain("filters[id][$in][1]=11");
     expect(url).not.toContain("filters[documentId]");
-    expect(url).toContain("filters[locale][$eq]=ar");
+    // Node ids are EN ids: always resolved against locale=en first (BUG-09).
+    expect(url).toContain("filters[locale][$eq]=en");
+    // Nothing matched → no AR request.
+    expect(mockGet).toHaveBeenCalledTimes(1);
+  });
+
+  // QA 2026-11-10 BUG-09: AR entries have their own numeric ids (same documentId).
+  it("ar: resolves AR rows via documentId and keeps the EN id; EN fallback when untranslated", async () => {
+    mockGet
+      .mockResolvedValueOnce({ data: { data: [
+        { id: 100, documentId: "100", name: "Law" },
+        { id: 101, documentId: "101", name: "Art" },
+      ] } })
+      .mockResolvedValueOnce({ data: { data: [{ id: 11404, documentId: "100", name: "قانون" }] } });
+    const rows = await catalogItemsApi.getProgramsByIds(["100", "101"], "ar");
+    const arUrl: string = mockGet.mock.calls[1][0];
+    expect(arUrl).toContain("filters[documentId][$in][0]=100");
+    expect(arUrl).toContain("filters[documentId][$in][1]=101");
+    expect(arUrl).toContain("filters[locale][$eq]=ar");
+    expect(arUrl).not.toContain("filters[id]");
+    expect(rows).toEqual([
+      { id: 100, documentId: "100", name: "قانون" },
+      { id: 101, documentId: "101", name: "Art" },
+    ]);
   });
 
   it("passes through res.data.data", async () => {
@@ -166,7 +189,7 @@ describe("catalogItemsApi.getOfferingsByIds", () => {
     // price/duration are Node-side, not Strapi scalar fields — must not be requested.
     expect(url).not.toContain("=price");
     expect(url).not.toContain("=duration");
-    expect(url).toContain("filters[locale][$eq]=ar");
+    expect(url).toContain("filters[locale][$eq]=en"); // EN ids first (BUG-09)
     expect(url).toContain("pagination[pageSize]=50");
   });
 

@@ -172,6 +172,36 @@ const OFFERING_POPULATE = [
   "status=draft",
 ].join("&");
 
+/**
+ * Fetch catalog rows by the numeric ids Node stores (always the EN entry ids).
+ * Strapi 5 keeps each locale as its own entry with its own numeric id, sharing
+ * the documentId — so a `locale=ar` + `id $in` query matches nothing (QA BUG-09).
+ * ar: EN rows by id → AR rows by documentId → AR content carrying the EN id
+ * (so Node matches keep working); untranslated rows fall back to EN.
+ */
+async function getByEnIdsLocalized<T extends { id: number; documentId: string }>(
+  collection: string,
+  ids: string[],
+  populate: string,
+  locale: "en" | "ar"
+): Promise<T[]> {
+  if (!ids.length) return [];
+  const enRes = await http.get<{ data: T[] }>(
+    `/api/${collection}?${buildInFilter(ids)}&${populate}&filters[locale][$eq]=en&pagination[pageSize]=50`
+  );
+  const enRows = enRes.data?.data ?? [];
+  if (locale === "en" || !enRows.length) return enRows;
+
+  const arRes = await http.get<{ data: T[] }>(
+    `/api/${collection}?${buildDocumentIdInFilter(enRows.map((r) => r.documentId))}&${populate}&filters[locale][$eq]=ar&pagination[pageSize]=50`
+  );
+  const arByDoc = new Map((arRes.data?.data ?? []).map((r) => [r.documentId, r]));
+  return enRows.map((en) => {
+    const ar = arByDoc.get(en.documentId);
+    return ar ? { ...ar, id: en.id } : en;
+  });
+}
+
 // ─── API calls ────────────────────────────────────────────────────────────────
 
 export const catalogItemsApi = {
@@ -193,12 +223,7 @@ export const catalogItemsApi = {
     ids: string[],
     locale: "en" | "ar"
   ): Promise<CatalogProgram[]> {
-    if (!ids.length) return [];
-    const filter = buildInFilter(ids);
-    const res = await http.get<{ data: CatalogProgram[] }>(
-      `/api/programs?${filter}&${PROGRAM_POPULATE}&filters[locale][$eq]=${locale}&pagination[pageSize]=50`
-    );
-    return res.data?.data ?? [];
+    return getByEnIdsLocalized<CatalogProgram>("programs", ids, PROGRAM_POPULATE, locale);
   },
 
   /** Fetch institutions by documentId list (used by favorites) */
@@ -219,12 +244,7 @@ export const catalogItemsApi = {
     ids: string[],
     locale: "en" | "ar"
   ): Promise<CatalogInstitution[]> {
-    if (!ids.length) return [];
-    const filter = buildInFilter(ids);
-    const res = await http.get<{ data: CatalogInstitution[] }>(
-      `/api/instituitions?${filter}&${INSTITUTION_POPULATE}&filters[locale][$eq]=${locale}&pagination[pageSize]=50`
-    );
-    return res.data?.data ?? [];
+    return getByEnIdsLocalized<CatalogInstitution>("instituitions", ids, INSTITUTION_POPULATE, locale);
   },
 
   /** Fetch offerings by numeric id list (used by favorites) */
@@ -232,12 +252,7 @@ export const catalogItemsApi = {
     ids: string[],
     locale: "en" | "ar"
   ): Promise<CatalogOffering[]> {
-    if (!ids.length) return [];
-    const filter = buildInFilter(ids);
-    const res = await http.get<{ data: CatalogOffering[] }>(
-      `/api/offerings?${filter}&${OFFERING_POPULATE}&filters[locale][$eq]=${locale}&pagination[pageSize]=50`
-    );
-    return res.data?.data ?? [];
+    return getByEnIdsLocalized<CatalogOffering>("offerings", ids, OFFERING_POPULATE, locale);
   },
 
   /** Helper to extract plain text from Strapi rich-text blocks */
