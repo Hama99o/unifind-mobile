@@ -33,6 +33,7 @@ import { ListSkeleton } from "@/components/common/ListSkeleton";
 import { ListSearchBar } from "@/components/common/ListSearchBar";
 import { ListSortSheet } from "@/components/common/ListSortSheet";
 import { useColors } from "@/hooks/useColors";
+import { useLocalization } from "@/hooks/useLocalization";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import type { FilterConfig, FilterValues, FilterOption } from "@/components/common/FilterDrawer";
 
@@ -64,6 +65,7 @@ export function UniversalList<T>({
   initialSort,
 }: Props<T>) {
   const { t, isRtl } = useCustomTranslation();
+  const { formatNumber } = useLocalization();
   const colors = useColors();
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -196,9 +198,9 @@ export function UniversalList<T>({
 
       {/* Results count — right-aligned, prussian, font-semibold (matches web mobile) */}
       <View className={`px-4 pt-1 pb-2 flex-row ${isRtl ? "justify-start" : "justify-end"}`}>
-        {config.showResultsCount !== false && !loading && (
+        {config.showResultsCount !== false && !loading && !error && (
           <Text className="text-sm font-semibold text-foreground">
-            {total.toLocaleString()} {t("results")}
+            {formatNumber(total)} {t("results")}
           </Text>
         )}
       </View>

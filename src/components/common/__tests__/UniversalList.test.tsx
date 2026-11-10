@@ -187,6 +187,8 @@ describe("UniversalList", () => {
     });
     expect(screen.getByText("common.retry")).toBeTruthy();
     expect(fetchPage).toHaveBeenCalledTimes(1);
+    // QA offline pass: no misleading "0 results" next to the error.
+    expect(screen.queryByText(/results$/)).toBeNull();
 
     // Press the retry Button (label "common.retry")
     fireEvent.press(screen.getByText("common.retry"));
