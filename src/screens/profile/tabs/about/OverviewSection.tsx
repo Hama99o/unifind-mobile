@@ -13,7 +13,9 @@
  * Destructive deletes use confirmAlert (never raw Alert.alert).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAsyncResource } from "@/hooks/useAsyncResource";
 import {
   View,
   ScrollView,
@@ -208,38 +210,36 @@ export function OverviewSection() {
   const { t, isRtl } = useCustomTranslation();
   const colors = useColors();
 
-  const [loading, setLoading] = useState(true);
+  // Server state (React Query): extended profile + skills per user, language list shared.
+  type UserLang = { _id: string; languageName: string };
+  const extendedRes = useAsyncResource(["userExtended"], () => profileApi.getUserExtended());
+  const skillsRes = useAsyncResource<Skill[]>(["skills"], () => profileApi.getSkills());
+  const languagesQuery = useQuery({
+    queryKey: ["catalog", "languages"],
+    queryFn: () => profileApi.getLanguages(),
+    staleTime: 24 * 60 * 60_000,
+  });
+  const loading = extendedRes.loading || skillsRes.loading || languagesQuery.isPending;
+
   const [bio, setBio] = useState("");
   const [savingBio, setSavingBio] = useState(false);
+  const bioSeeded = useRef(false);
+  useEffect(() => {
+    if (extendedRes.data && !bioSeeded.current) {
+      bioSeeded.current = true;
+      setBio(extendedRes.data.bio ?? "");
+    }
+  }, [extendedRes.data]);
 
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const skills: Skill[] = skillsRes.data ?? [];
+  const setSkills = (updater: (prev: Skill[]) => Skill[]) => skillsRes.setData((prev) => updater(prev ?? []));
   const [showSkillModal, setShowSkillModal] = useState(false);
 
-  const [userLangs, setUserLangs] = useState<Array<{ _id: string; languageName: string }>>([]);
-  const [allLanguages, setAllLanguages] = useState<Language[]>([]);
+  const userLangs: UserLang[] = (extendedRes.data?.languages as UserLang[] | undefined) ?? [];
+  const setUserLangs = (next: UserLang[]) =>
+    extendedRes.setData((prev) => ({ ...(prev ?? {}), languages: next }) as NonNullable<typeof prev>);
+  const allLanguages: Language[] = languagesQuery.data ?? [];
   const [showLangModal, setShowLangModal] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [extended, skillList, langList] = await Promise.all([
-          profileApi.getUserExtended(),
-          profileApi.getSkills(),
-          profileApi.getLanguages(),
-        ]);
-        setBio(extended.bio ?? "");
-        setUserLangs(extended.languages ?? []);
-        setSkills(skillList);
-        setAllLanguages(langList);
-      } catch {
-        // ignore — user sees empty
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
 
   const handleSaveBio = async () => {
     setSavingBio(true);

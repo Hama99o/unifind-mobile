@@ -98,4 +98,11 @@ describe("useAsyncResource", () => {
     const b = renderHook(() => useAsyncResource(["bookings"], loader), { wrapper });
     await waitFor(() => expect(b.result.current.data).toBe("u2"));
   });
+
+  it("setData updates the cached value in place", async () => {
+    const { result } = renderHook(() => useAsyncResource(["list"], async () => [1, 2]), { wrapper });
+    await waitFor(() => expect(result.current.data).toEqual([1, 2]));
+    act(() => result.current.setData((prev) => [...(prev ?? []), 3]));
+    await waitFor(() => expect(result.current.data).toEqual([1, 2, 3]));
+  });
 });

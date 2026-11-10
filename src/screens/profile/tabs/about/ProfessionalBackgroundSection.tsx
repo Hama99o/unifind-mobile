@@ -41,7 +41,8 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
 import { showToast } from "@/stores/toastStore";
 import { academicApi, type ProfessionalBackground } from "@/api/academicApi";
-import { profileApi } from "@/api/profileApi";
+import { useAsyncResource } from "@/hooks/useAsyncResource";
+import { useCountries } from "@/hooks/queries/useProfile";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -115,14 +116,12 @@ function ExperienceFormModal({
 
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(initialForm ?? DEFAULT_FORM);
-  const [countries, setCountries] = useState<SelectOption[]>([]);
+  const countriesQuery = useCountries();
+  const countries: SelectOption[] = (countriesQuery.data ?? []).map((c) => ({ label: c.countryName, value: c.countryName }));
 
   useEffect(() => {
     if (!visible) return;
     setForm(initialForm ?? DEFAULT_FORM);
-    profileApi.getCountries().then((list) => {
-      setCountries(list.map((c) => ({ label: c.countryName, value: c.countryName })));
-    }).catch(() => {});
   }, [visible]);
 
   const set =
@@ -286,24 +285,19 @@ export function ProfessionalBackgroundSection() {
   const { t } = useCustomTranslation();
   const { formatDate } = useLocalization();
 
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<ProfessionalBackground[]>([]);
+  // Cached per user (React Query via useAsyncResource); edits update the cache.
+  const {
+    data,
+    loading,
+    setData,
+  } = useAsyncResource<ProfessionalBackground[]>(["professionalBackgrounds"], () =>
+    academicApi.getProfessionalBackgrounds().catch(() => [] as ProfessionalBackground[])
+  );
+  const items = data ?? [];
+  const setItems = (updater: (prev: ProfessionalBackground[]) => ProfessionalBackground[]) =>
+    setData((prev) => updater(prev ?? []));
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<ProfessionalBackground | null>(null);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const list = await academicApi.getProfessionalBackgrounds();
-      setItems(list);
-    } catch {
-      // non-fatal
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
 
   const handleDelete = (id: string) => {
     confirmAlert(t("profileExperienceDelete"), t("profileExperienceDeleteConfirm"), [

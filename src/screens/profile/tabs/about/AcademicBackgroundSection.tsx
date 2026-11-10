@@ -23,7 +23,7 @@
  *  - Destructive actions via confirmAlert
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   View, ScrollView, Modal, Pressable,
 } from "react-native";
@@ -45,6 +45,8 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
 import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/stores/toastStore";
+import { useQuery } from "@tanstack/react-query";
+import { useAsyncResource } from "@/hooks/useAsyncResource";
 import {
   academicApi,
   catalogApi,
@@ -110,67 +112,51 @@ function AcademicFormModal({ visible, onClose, onSave, initialForm, mode, locale
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(initialForm ?? DEFAULT_FORM);
 
-  const [institutions, setInstitutions] = useState<SelectOption[]>([]);
-  const [campuses, setCampuses] = useState<SelectOption[]>([]);
-  const [faculties, setFaculties] = useState<SelectOption[]>([]);
-  const [programs, setPrograms] = useState<SelectOption[]>([]);
-  const [slugMap, setSlugMap] = useState<Map<string, string>>(new Map());
-  const [loadingInst, setLoadingInst] = useState(false);
-  const [loadingCampus, setLoadingCampus] = useState(false);
-  const [loadingFaculty, setLoadingFaculty] = useState(false);
-  const [loadingPrograms, setLoadingPrograms] = useState(false);
+  // Cascading catalog selects (React Query: cached per locale + parent id,
+  // fetched only while the sheet is open and the parent is chosen).
+  const instQuery = useQuery({
+    queryKey: ["catalog", "institutionsForSelect", locale],
+    queryFn: () => catalogApi.getInstitutions(locale),
+    enabled: visible,
+    staleTime: 60 * 60_000,
+  });
+  const instList = instQuery.data ?? [];
+  const institutions: SelectOption[] = instList.map((i) => ({ label: i.name, value: String(i.id) }));
+  const slugMap = new Map<string, string>();
+  instList.forEach((i) => { if (i.slug) slugMap.set(String(i.id), i.slug); });
+  const institutionSlug = form.institutionId ? slugMap.get(form.institutionId) : undefined;
+
+  const campusQuery = useQuery({
+    queryKey: ["catalog", "campusesBySlug", institutionSlug ?? "", locale],
+    queryFn: () => catalogApi.getCampusesBySlug(institutionSlug!, locale),
+    enabled: visible && !!institutionSlug,
+  });
+  const facultyQuery = useQuery({
+    queryKey: ["catalog", "facultiesByCampus", form.campusId, locale],
+    queryFn: () => catalogApi.getFaculties(Number(form.campusId), locale),
+    enabled: visible && !!institutionSlug && !!form.campusId,
+  });
+  const programQuery = useQuery({
+    queryKey: ["catalog", "programsByFaculty", form.facultyId, locale],
+    queryFn: () => catalogApi.getProgramsByFaculty(Number(form.facultyId), locale),
+    enabled: visible && !!form.campusId && !!form.facultyId,
+  });
+  const campuses: SelectOption[] = institutionSlug
+    ? (campusQuery.data ?? []).map((c) => ({ label: c.name, value: String(c.id) }))
+    : [];
+  const faculties: SelectOption[] =
+    institutionSlug && form.campusId ? (facultyQuery.data ?? []).map((f) => ({ label: f.name, value: String(f.id) })) : [];
+  const programs: SelectOption[] =
+    form.campusId && form.facultyId ? (programQuery.data ?? []).map((p) => ({ label: p.name, value: String(p.id) })) : [];
+  const loadingInst = instQuery.isFetching;
+  const loadingCampus = campusQuery.isFetching;
+  const loadingFaculty = facultyQuery.isFetching;
+  const loadingPrograms = programQuery.isFetching;
 
   useEffect(() => {
     if (!visible) return;
     setForm(initialForm ?? DEFAULT_FORM);
-    setCampuses([]);
-    setFaculties([]);
-    setPrograms([]);
-    setLoadingInst(true);
-    catalogApi.getInstitutions(locale).then((list) => {
-      setInstitutions(list.map((i) => ({ label: i.name, value: String(i.id) })));
-      const sm = new Map<string, string>();
-      list.forEach((i) => { if (i.slug) sm.set(String(i.id), i.slug); });
-      setSlugMap(sm);
-    }).catch(() => {}).finally(() => setLoadingInst(false));
   }, [visible]);
-
-  useEffect(() => {
-    const slug = form.institutionId ? slugMap.get(form.institutionId) : undefined;
-    if (!slug) {
-      setCampuses([]);
-      setFaculties([]);
-      setPrograms([]);
-      return;
-    }
-    setLoadingCampus(true);
-    catalogApi.getCampusesBySlug(slug, locale).then((list) => {
-      setCampuses(list.map((c) => ({ label: c.name, value: String(c.id) })));
-    }).catch(() => {}).finally(() => setLoadingCampus(false));
-  }, [form.institutionId, slugMap, locale]);
-
-  useEffect(() => {
-    if (!form.campusId) {
-      setFaculties([]);
-      setPrograms([]);
-      return;
-    }
-    setLoadingFaculty(true);
-    catalogApi.getFaculties(Number(form.campusId), locale).then((list) => {
-      setFaculties(list.map((f) => ({ label: f.name, value: String(f.id) })));
-    }).catch(() => {}).finally(() => setLoadingFaculty(false));
-  }, [form.campusId, locale]);
-
-  useEffect(() => {
-    if (!form.facultyId) {
-      setPrograms([]);
-      return;
-    }
-    setLoadingPrograms(true);
-    catalogApi.getProgramsByFaculty(Number(form.facultyId), locale).then((list) => {
-      setPrograms(list.map((p) => ({ label: p.name, value: String(p.id) })));
-    }).catch(() => {}).finally(() => setLoadingPrograms(false));
-  }, [form.facultyId, locale]);
 
   const set = (key: keyof FormState) => (val: FormState[typeof key]) =>
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -220,9 +206,6 @@ function AcademicFormModal({ visible, onClose, onSave, initialForm, mode, locale
                     facultyId: "",
                     programId: "",
                   }));
-                  setCampuses([]);
-                  setFaculties([]);
-                  setPrograms([]);
                 }}
                 isLoading={loadingInst}
               />
@@ -234,8 +217,6 @@ function AcademicFormModal({ visible, onClose, onSave, initialForm, mode, locale
                 value={form.campusId}
                 onChange={(v) => {
                   setForm((p) => ({ ...p, campusId: v, facultyId: "", programId: "" }));
-                  setFaculties([]);
-                  setPrograms([]);
                 }}
                 isLoading={loadingCampus}
               />
@@ -247,7 +228,6 @@ function AcademicFormModal({ visible, onClose, onSave, initialForm, mode, locale
                 value={form.facultyId}
                 onChange={(v) => {
                   setForm((p) => ({ ...p, facultyId: v, programId: "" }));
-                  setPrograms([]);
                 }}
                 isLoading={loadingFaculty}
               />
@@ -334,25 +314,18 @@ export function AcademicBackgroundSection() {
   const userId = user?.sub ?? "";
   const locale = (lang === "ar" ? "ar" : "en") as "en" | "ar";
 
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<AcademicBackground[]>([]);
+  // Cached per user + locale (React Query via useAsyncResource); edits update the cache.
+  const { data, loading: listLoading, reload, setData } = useAsyncResource<AcademicBackground[]>(
+    ["academicBackgrounds", locale],
+    () => (userId ? academicApi.getAcademicBackgrounds(userId, locale).catch(() => [] as AcademicBackground[]) : Promise.resolve([]))
+  );
+  const loading = !!userId && listLoading;
+  const items = data ?? [];
+  const setItems = (updater: (prev: AcademicBackground[]) => AcademicBackground[]) =>
+    setData((prev) => updater(prev ?? []));
+  const load = async () => reload();
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<AcademicBackground | null>(null);
-
-  const load = useCallback(async () => {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const list = await academicApi.getAcademicBackgrounds(userId, locale);
-      setItems(list);
-    } catch {
-      // non-fatal
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, locale]);
-
-  useEffect(() => { load(); }, [load]);
 
   const handleDelete = (id: string) => {
     confirmAlert(t("profileEducationDelete"), t("profileEducationDeleteConfirm"), [

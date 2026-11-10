@@ -16,7 +16,7 @@
  */
 
 import { useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 
 export interface AsyncResourceState<T> {
@@ -24,6 +24,8 @@ export interface AsyncResourceState<T> {
   loading: boolean;
   error: string | null;
   reload: () => void;
+  /** Update the cached value in place (optimistic / after a create-update-delete). */
+  setData: (updater: (prev: T | null) => T) => void;
 }
 
 const DEFAULT_ERROR = "Failed to load. Please try again.";
@@ -33,10 +35,9 @@ export function useAsyncResource<T>(
   loader: () => Promise<T>
 ): AsyncResourceState<T> {
   const userId = useAuthStore((s) => s.user?.userID);
-  const query = useQuery({
-    queryKey: ["user", userId ?? "anon", ...key],
-    queryFn: loader,
-  });
+  const queryClient = useQueryClient();
+  const queryKey = ["user", userId ?? "anon", ...key];
+  const query = useQuery({ queryKey, queryFn: loader });
 
   const { refetch } = query;
   const reload = useCallback(() => {
@@ -49,10 +50,19 @@ export function useAsyncResource<T>(
       : DEFAULT_ERROR
     : null;
 
+  const keyString = JSON.stringify(queryKey);
+  const setData = useCallback(
+    (updater: (prev: T | null) => T) => {
+      queryClient.setQueryData<T>(JSON.parse(keyString), (prev) => updater(prev ?? null));
+    },
+    [queryClient, keyString]
+  );
+
   return {
     data: query.data ?? null,
     loading: query.isPending,
     error,
     reload,
+    setData,
   };
 }
