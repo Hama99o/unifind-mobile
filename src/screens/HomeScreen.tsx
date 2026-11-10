@@ -15,7 +15,8 @@
  * Business logic is in the section files; this file stays under 60 lines.
  */
 
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
+import { KeyboardSafeScrollView } from "@/components/shared/KeyboardSafeScrollView";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -85,7 +86,9 @@ export default function HomeScreen() {
   return (
     // edges={[]} — hero gradient covers the full status-bar area intentionally
     <SafeAreaView edges={["top"]} className="flex-1 bg-background" testID="home-screen">
-      <ScrollView
+      <KeyboardSafeScrollView
+        // Keep the focused footer email field AND its Subscribe button above the keyboard.
+        focusedExtraSpace={96}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
         bounces
@@ -107,7 +110,7 @@ export default function HomeScreen() {
         <AppFooter />
         {/* Bottom breathing room above tab bar */}
         <View className="h-8" />
-      </ScrollView>
+      </KeyboardSafeScrollView>
 
       {/* Welcome popup — shown once on first launch */}
       <WelcomeModal />
