@@ -10,6 +10,7 @@ import { showToast } from "@/stores/toastStore";
 import { extractPlainText } from "@/api/catalog";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
+import { formatDuration } from "@/utils/catalogFormat";
 import { router } from "expo-router";
 import type { ProgramListItem } from "@/api/programsApi";
 
@@ -55,21 +56,8 @@ export function useProgramCardRenderer({
           ? `${formatNumber(languages.length)} ${t("languages")}`
           : "-";
 
-      // Duration
-      const yrs = prog.nbOfYears;
-      const mn = yrs?.min;
-      const mx = yrs?.max;
-      let duration = "-";
-      if (mn && mx) {
-        duration =
-          mn === mx
-            ? `${mn} ${mn === 1 ? t("year") : t("nbYears")}`
-            : `${mn}–${mx} ${t("nbYears")}`;
-      } else if (mn) {
-        duration = `${mn} ${t("nbYears")}`;
-      } else if (mx) {
-        duration = `${mx} ${t("nbYears")}`;
-      }
+      // Duration (shared formatter: localized digits, dual "2 Years"/"سنتان")
+      const duration = formatDuration(prog.nbOfYears, t, formatNumber) || "-";
 
       // Fees from institution.tuition[0]
       const tuition0 = prog.institution?.tuition?.[0];

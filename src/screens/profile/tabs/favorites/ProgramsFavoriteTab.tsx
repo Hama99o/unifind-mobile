@@ -110,7 +110,7 @@ export function ProgramsFavoriteTab() {
           // H2 fix: use catalogFormat helpers (i18n, zero-guard, formatCurrency)
           const locationLabel = formatCampusLabel(prog.campus, { t, formatNumber }) || "-";
           const langLabel = formatLanguageLabel(prog.languages, { t, formatNumber }) || "-";
-          const duration = formatDuration(prog.nbOfYears, t) || "-";
+          const duration = formatDuration(prog.nbOfYears, t, formatNumber) || "-";
           const tuition = prog.institution?.tuition?.[0];
           const fees = tuition ? (formatTuitionRange(tuition, formatCurrency) || "-") : "-";
 

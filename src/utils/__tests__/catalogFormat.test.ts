@@ -126,8 +126,17 @@ describe("formatDuration", () => {
     expect(formatDuration({ min: 1, max: 1 }, t)).toBe("1 year");
   });
 
-  it("returns '2 towYears' for min=2 max=2", () => {
-    expect(formatDuration({ min: 2, max: 2 }, t)).toBe("2 towYears");
+  it("returns the dual key alone for min=2 max=2 (towYears already has the number)", () => {
+    // en "2 Years", ar "سنتان" — prefixing the number gave "2 2 Years".
+    expect(formatDuration({ min: 2, max: 2 }, t)).toBe("towYears");
+  });
+
+  it("formats every number with formatNumber (Arabic digits in ar)", () => {
+    const ar = (n: number) => n.toLocaleString("ar", { numberingSystem: "arab" } as Intl.NumberFormatOptions);
+    expect(formatDuration({ min: 4, max: 4 }, t, ar)).toBe("٤ nbYears");
+    expect(formatDuration({ min: 1, max: 1 }, t, ar)).toBe("١ year");
+    expect(formatDuration({ min: 2, max: 5 }, t, ar)).toBe("٢–٥ nbYears");
+    expect(formatDuration({ max: 3 }, t, ar)).toBe("٣ nbYears");
   });
 
   it("returns 'N nbYears' for min=4 max=4", () => {

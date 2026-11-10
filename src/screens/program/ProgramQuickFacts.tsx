@@ -24,6 +24,7 @@ import {
 import { Text } from "@/components/ui/text";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
+import { formatDuration } from "@/utils/catalogFormat";
 import { useColors } from "@/hooks/useColors";
 import type { ProgramListItem } from "@/api/programsApiTypes";
 
@@ -39,31 +40,11 @@ interface FactItem {
 
 export function ProgramQuickFacts({ program }: Props) {
   const { t, isRtl } = useCustomTranslation();
-  const { formatCurrency } = useLocalization();
+  const { formatCurrency, formatNumber } = useLocalization();
   const colors = useColors();
 
   // ── Duration ────────────────────────────────────────────────────────────────
-  const nbYears = program.nbOfYears;
-  let durationValue = "";
-  if (nbYears) {
-    const { min, max } = nbYears;
-    if (min != null && max != null) {
-      if (min === max) {
-        durationValue =
-          min === 1
-            ? `1 ${t("year")}`
-            : min === 2
-            ? t("towYears")
-            : `${min} ${t("nbYears")}`;
-      } else {
-        durationValue = `${min}–${max} ${t("nbYears")}`;
-      }
-    } else if (min != null) {
-      durationValue = `${min} ${t("nbYears")}`;
-    } else if (max != null) {
-      durationValue = `${max} ${t("nbYears")}`;
-    }
-  }
+  const durationValue = formatDuration(program.nbOfYears, t, formatNumber);
 
   // ── Credits ─────────────────────────────────────────────────────────────────
   let creditsValue = "";

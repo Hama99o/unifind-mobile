@@ -26,7 +26,7 @@ import { formatTuitionRange, formatDuration, formatCredits } from "@/utils/catal
 
 export function ProgramsCompareTab() {
   const { t, lang } = useCustomTranslation();
-  const { formatCurrency } = useLocalization();
+  const { formatCurrency, formatNumber } = useLocalization();
   const locale = (lang === "ar" ? "ar" : "en") as "en" | "ar";
   const { setCompared, removeCompare } = useCompareStore();
 
@@ -53,7 +53,7 @@ export function ProgramsCompareTab() {
             prog.campus?.[0]?.location?.city?.name ??
             "-";
           // H2 fix: use catalogFormat helpers (i18n, zero-guard, no hardcoded "$")
-          const duration = formatDuration(prog.nbOfYears, t) || "-";
+          const duration = formatDuration(prog.nbOfYears, t, formatNumber) || "-";
           const credits = formatCredits(prog.nbOfCredits, t) || "-";
           const fees = formatTuitionRange(
             prog.institution?.tuition?.[0] ?? {},

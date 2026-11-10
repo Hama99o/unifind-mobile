@@ -103,23 +103,25 @@ export function formatInstitutionTuition(
  */
 export function formatDuration(
   nbOfYears: NbOfYears | null | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
+  formatNumber: (n: number) => string = String
 ): string {
   if (!nbOfYears) return "";
   const { min, max } = nbOfYears;
   if (min == null && max == null) return "";
+  const n = formatNumber;
 
   if (min != null && max != null) {
     if (min === max) {
-      // Singular/dual/plural via translation keys
-      if (min === 1) return `1 ${t("year")}`;
-      if (min === 2) return `${min} ${t("towYears")}`;
-      return `${min} ${t("nbYears")}`;
+      if (min === 1) return `${n(1)} ${t("year")}`;
+      // Dual: the key already carries the number ("2 Years" / "سنتان").
+      if (min === 2) return t("towYears");
+      return `${n(min)} ${t("nbYears")}`;
     }
-    return `${min}–${max} ${t("nbYears")}`;
+    return `${n(min)}–${n(max)} ${t("nbYears")}`;
   }
-  if (min != null) return `${min} ${t("nbYears")}`;
-  if (max != null) return `${max} ${t("nbYears")}`;
+  if (min != null) return `${n(min)} ${t("nbYears")}`;
+  if (max != null) return `${n(max)} ${t("nbYears")}`;
   return "";
 }
 
