@@ -217,7 +217,7 @@ export default function OfferingCheckoutScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 60, gap: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: PAYMENTS_ENABLED ? 120 : 60, gap: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Breadcrumb — §2: mb-1 below */}
@@ -278,26 +278,33 @@ export default function OfferingCheckoutScreen() {
           {PAYMENTS_ENABLED ? (
             <>
               <PaymentMethodTabs selected="whish" />
-
-              <GradientView
-                colors={[colors.primary, colors.secondary]}
-                style={{ borderRadius: 14 }}
-              >
-                <Button
-                  label={t("pay_now")}
-                  onPress={handlePay}
-                  disabled={paying}
-                  variant="solid"
-                  className="bg-transparent w-full"
-                  testID="checkout-pay-now"
-                />
-              </GradientView>
             </>
           ) : (
             <PaymentsUnavailableNotice />
           )}
         </View>
       </ScrollView>
+
+      {/* DESIGN-03: Pay Now pinned to the bottom (review-and-pay pattern; Mobbin refs:
+          Airbnb https://mobbin.com/screens/9a6b2272-a314-4e9c-b53f-7bccaad4758a ,
+          Swiggy https://mobbin.com/screens/04972635-b301-49c0-b49c-d1e86dcf1743). */}
+      {PAYMENTS_ENABLED && (
+        <View testID="checkout-pay-bar" className="absolute left-0 right-0 bottom-0 border-t border-border bg-background px-4 pt-3 pb-6">
+          <GradientView
+            colors={[colors.primary, colors.secondary]}
+            style={{ borderRadius: 14 }}
+          >
+            <Button
+              label={t("pay_now")}
+              onPress={handlePay}
+              disabled={paying}
+              variant="solid"
+              className="bg-transparent w-full"
+              testID="checkout-pay-now"
+            />
+          </GradientView>
+        </View>
+      )}
     </ScreenContainer>
   );
 }
