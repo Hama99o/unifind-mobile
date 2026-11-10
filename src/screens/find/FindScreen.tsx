@@ -15,7 +15,7 @@
  */
 
 import React, { useCallback, useState } from "react";
-import { Platform, UIManager, View, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 
@@ -28,11 +28,6 @@ import { useColors } from "@/hooks/useColors";
 import FindProgramsScreen from "@/screens/find/FindProgramsScreen";
 import FindInstitutionsScreen from "@/screens/find/FindInstitutionsScreen";
 import FindOfferingsScreen from "@/screens/find/FindOfferingsScreen";
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 /** When `asTabRoot` is true the screen is the Program Explorer bottom-tab root:
  *  it shows all programs directly (no pre-applied filter) and renders NO back
