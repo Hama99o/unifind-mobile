@@ -21,6 +21,7 @@ import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,10 @@ export function AlertDialog({
   message,
   actions = [],
 }: AlertDialogProps) {
+  // Text follows the reading direction (ar was left-aligned, QA 2026-11-10).
+  const { isRtl } = useCustomTranslation();
+  const textAlign = isRtl ? "right" : "left";
+
   // Scale-up entrance: 0.95 → 1 over 180ms (S7 mount animation)
   const scale = useSharedValue(0.95);
 
@@ -80,11 +85,13 @@ export function AlertDialog({
             className="w-full bg-background rounded-2xl p-6 shadow-lg"
             style={cardStyle}
           >
-            <Heading size="md" className="text-foreground mb-2">
+            <Heading size="md" className="text-foreground mb-2" style={{ textAlign }}>
               {title}
             </Heading>
             {message ? (
-              <Text className="text-muted-foreground text-sm mb-5">{message}</Text>
+              <Text className="text-muted-foreground text-sm mb-5" style={{ textAlign }}>
+                {message}
+              </Text>
             ) : null}
 
             <View className={cn("gap-3", actions.length > 1 ? "flex-col" : "flex-row justify-end")}>
