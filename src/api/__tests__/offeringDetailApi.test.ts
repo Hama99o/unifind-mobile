@@ -56,4 +56,30 @@ describe("offeringDetailApi.getBySlug", () => {
     mockGet.mockRejectedValueOnce(new Error("network"));
     expect(await offeringDetailApi.getBySlug("none")).toBeNull();
   });
+
+  // QA 2026-11-10 BUG-03: AR content lives in a separate Strapi entry (same documentId).
+  it("ar: returns the AR translation with the EN id and slug", async () => {
+    mockGet
+      .mockResolvedValueOnce({ data: { data: [{ id: 4, documentId: "docA", slug: "cyber", title: "Cyber" }] } })
+      .mockResolvedValueOnce({ data: { data: [{ id: 8, documentId: "docA", slug: "cyber-ar", title: "أمان" }] } });
+    const r = await offeringDetailApi.getBySlug("cyber", "ar");
+    expect(r).toEqual({ id: 4, documentId: "docA", slug: "cyber", title: "أمان" });
+    const qs = new URLSearchParams(mockGet.mock.calls[1][0].split("?")[1]);
+    expect(qs.get("filters[documentId][$eq]")).toBe("docA");
+    expect(qs.get("filters[locale][$eq]")).toBe("ar");
+  });
+
+  it("ar: falls back to EN when there is no translation or the AR call fails", async () => {
+    const en = { id: 9, documentId: "docB", slug: "guide", title: "Guide" };
+    mockGet.mockResolvedValueOnce({ data: { data: [en] } }).mockResolvedValueOnce({ data: { data: [] } });
+    expect(await offeringDetailApi.getBySlug("guide", "ar")).toEqual(en);
+    mockGet.mockResolvedValueOnce({ data: { data: [en] } }).mockRejectedValueOnce(new Error("net"));
+    expect(await offeringDetailApi.getBySlug("guide", "ar")).toEqual(en);
+  });
+
+  it("en: single request, no translation lookup", async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: [{ id: 1, documentId: "d", slug: "s" }] } });
+    await offeringDetailApi.getBySlug("s", "en");
+    expect(mockGet).toHaveBeenCalledTimes(1);
+  });
 });

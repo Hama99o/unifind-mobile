@@ -102,7 +102,9 @@ interface NodeOfferingsResponse {
 
 // ─── Strapi populate builder ───────────────────────────────────────────────────
 
-function buildStrapiQuery(ids: (string | number)[], lang: "en" | "ar"): string {
+type StrapiOfferingFilter = { ids: (string | number)[] } | { documentIds: string[] };
+
+function buildStrapiQuery(filter: StrapiOfferingFilter, lang: "en" | "ar"): string {
   const params = new URLSearchParams();
   params.append("filters[locale][$eq]", lang);
   params.append("status", "draft");
@@ -113,7 +115,11 @@ function buildStrapiQuery(ids: (string | number)[], lang: "en" | "ar"): string {
   ];
   fields.forEach((f, i) => params.append(`fields[${i}]`, f));
 
-  ids.forEach((id, i) => params.append(`filters[id][$in][${i}]`, String(id)));
+  if ("ids" in filter) {
+    filter.ids.forEach((id, i) => params.append(`filters[id][$in][${i}]`, String(id)));
+  } else {
+    filter.documentIds.forEach((d, i) => params.append(`filters[documentId][$in][${i}]`, d));
+  }
 
   // category
   params.append("populate[category][fields][0]", "name");
@@ -208,9 +214,22 @@ export const offeringsApi = {
    */
   async fetchFromStrapi(ids: number[], lang: "en" | "ar"): Promise<StrapiOffering[]> {
     if (ids.length === 0) return [];
-    const query = buildStrapiQuery(ids, lang);
-    const res = await http.get<{ data: StrapiOffering[] }>(query);
-    return res.data?.data ?? [];
+    const res = await http.get<{ data: StrapiOffering[] }>(buildStrapiQuery({ ids }, "en"));
+    const enItems = res.data?.data ?? [];
+    if (lang === "en" || enItems.length === 0) return enItems;
+
+    // Strapi 5 gives every locale its own numeric id, but Node's offeringContentId
+    // is the EN id. Resolve the AR entries through the shared documentId and keep
+    // the EN id so the Node merge (and favorites) still match. Untranslated
+    // offerings fall back to their EN content instead of disappearing.
+    const arRes = await http.get<{ data: StrapiOffering[] }>(
+      buildStrapiQuery({ documentIds: enItems.map((e) => e.documentId) }, "ar")
+    );
+    const arByDoc = new Map((arRes.data?.data ?? []).map((a) => [a.documentId, a]));
+    return enItems.map((e) => {
+      const tr = arByDoc.get(e.documentId);
+      return tr ? { ...tr, id: e.id } : e;
+    });
   },
 
   /**

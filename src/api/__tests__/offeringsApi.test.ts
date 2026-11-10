@@ -85,6 +85,41 @@ describe("offeringsApi.fetchFromStrapi", () => {
     mockHttpGet.mockResolvedValueOnce({});
     expect(await offeringsApi.fetchFromStrapi([1], "en")).toEqual([]);
   });
+
+  // QA 2026-11-10 BUG-03: Strapi 5 gives each locale its own numeric id; Node
+  // stores the EN id. Arabic must resolve EN ids -> documentId -> AR entry.
+  it("ar: maps AR translations back to the EN id via documentId, EN fallback when untranslated", async () => {
+    const en = [
+      { id: 4, documentId: "docA", title: "Stay Cybersafe" },
+      { id: 9, documentId: "docB", title: "Unlock Your Future" },
+    ];
+    const ar = [{ id: 8, documentId: "docA", title: "حافظ على أمانك" }];
+    mockHttpGet
+      .mockResolvedValueOnce({ data: { data: en } })
+      .mockResolvedValueOnce({ data: { data: ar } });
+
+    const result = await offeringsApi.fetchFromStrapi([4, 9], "ar");
+
+    const enQs = new URLSearchParams(mockHttpGet.mock.calls[0][0].split("?")[1]);
+    expect(enQs.get("filters[locale][$eq]")).toBe("en");
+    expect(enQs.get("filters[id][$in][0]")).toBe("4");
+    const arQs = new URLSearchParams(mockHttpGet.mock.calls[1][0].split("?")[1]);
+    expect(arQs.get("filters[locale][$eq]")).toBe("ar");
+    expect(arQs.get("filters[documentId][$in][0]")).toBe("docA");
+    expect(arQs.get("filters[documentId][$in][1]")).toBe("docB");
+    expect(arQs.get("filters[id][$in][0]")).toBeNull();
+
+    expect(result).toEqual([
+      { id: 4, documentId: "docA", title: "حافظ على أمانك" },
+      { id: 9, documentId: "docB", title: "Unlock Your Future" },
+    ]);
+  });
+
+  it("ar: no second request when no EN entry matched", async () => {
+    mockHttpGet.mockResolvedValueOnce({ data: { data: [] } });
+    expect(await offeringsApi.fetchFromStrapi([1], "ar")).toEqual([]);
+    expect(mockHttpGet).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ─── fetchOfferingRating ────────────────────────────────────────────────────────

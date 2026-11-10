@@ -20,9 +20,14 @@ export interface StrapiOfferingDetail extends StrapiOffering {
 
 // ─── Strapi populate builder ──────────────────────────────────────────────────
 
-function buildDetailQuery(slug: string): string {
+function buildDetailQuery(filter: { slug: string } | { documentId: string; locale: "ar" }): string {
   const params = new URLSearchParams();
-  params.append("filters[slug][$eq]", slug);
+  if ("slug" in filter) {
+    params.append("filters[slug][$eq]", filter.slug);
+  } else {
+    params.append("filters[documentId][$eq]", filter.documentId);
+    params.append("filters[locale][$eq]", filter.locale);
+  }
   params.append("status", "draft");
 
   const fields = [
@@ -82,12 +87,24 @@ export const offeringDetailApi = {
    * Fetch a single offering by slug from Strapi.
    * Returns null if not found.
    */
-  async getBySlug(slug: string): Promise<StrapiOfferingDetail | null> {
+  async getBySlug(slug: string, locale: "en" | "ar" = "en"): Promise<StrapiOfferingDetail | null> {
     try {
-      const query = buildDetailQuery(slug);
-      const res = await http.get<{ data: StrapiOfferingDetail[] }>(query);
-      const items = res.data?.data ?? [];
-      return items[0] ?? null;
+      const res = await http.get<{ data: StrapiOfferingDetail[] }>(buildDetailQuery({ slug }));
+      const item = (res.data?.data ?? [])[0] ?? null;
+      if (!item || locale === "en" || !item.documentId) return item;
+
+      // Slugs (and Node) are keyed on the EN entry; Strapi 5 stores the AR
+      // translation as a separate entry sharing the documentId (QA BUG-03).
+      // Keep the EN id so Node/favorites keep matching; fall back to EN content.
+      try {
+        const arRes = await http.get<{ data: StrapiOfferingDetail[] }>(
+          buildDetailQuery({ documentId: item.documentId, locale: "ar" })
+        );
+        const tr = (arRes.data?.data ?? [])[0];
+        return tr ? { ...tr, id: item.id, slug: item.slug } : item;
+      } catch {
+        return item;
+      }
     } catch {
       return null;
     }

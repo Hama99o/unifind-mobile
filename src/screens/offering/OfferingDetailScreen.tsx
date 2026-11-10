@@ -67,7 +67,7 @@ const ZERO_AVG = {
 
 export default function OfferingDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const { t, isRtl } = useCustomTranslation();
+  const { t, isRtl, lang } = useCustomTranslation();
 
   const { isLoggedIn, user } = useAuthStore();
   const { isFavorite, toggleFavorite, seedSelection } = useSelection();
@@ -92,7 +92,7 @@ export default function OfferingDetailScreen() {
     if (!silent) setLoading(true);
 
     const [strapi, node] = await Promise.all([
-      offeringDetailApi.getBySlug(slug),
+      offeringDetailApi.getBySlug(slug, lang === "ar" ? "ar" : "en"),
       nodeOfferingApi.getBySlug(slug),
     ]);
 
@@ -131,7 +131,7 @@ export default function OfferingDetailScreen() {
 
     setLoading(false);
     setRefreshing(false);
-  }, [slug, isLoggedIn, seedSelection]);
+  }, [slug, lang, isLoggedIn, seedSelection]);
 
   useEffect(() => {
     load();
