@@ -59,6 +59,16 @@ per tester. First build ~20 min (downloads Gradle/NDK); later builds are a few m
 - Anything `EXPO_PUBLIC_*` is **baked into the APK and extractable** — only non-secret
   config belongs there (the Strapi bearer is a public read-only token per AUTH_SECURITY §6).
 
+## Payments switch
+
+- `EXPO_PUBLIC_PAYMENTS_ENABLED` (see `src/config/payments.ts`) is the ONE switch for
+  booking → Whish payment. Anything but `"true"` (including unset) = OFF: the Book /
+  Pay buttons are replaced by a "coming soon" notice and no pending booking is created.
+- It is `"false"` in the `preview` profile. The `production` profile has no `env`
+  block yet, so it is OFF there too. Turn it on only after the Whish merchant
+  account is live (steps: `docs/QA_REPORT_2026-11-10.md` §3.5). It is baked in at
+  build time, so changing it needs a rebuild.
+
 ## Auth0 caveat (standalone builds)
 
 Login in a standalone APK redirects via the `unifind://` scheme instead of the Expo Go

@@ -44,6 +44,14 @@ jest.mock("lucide-react-native", () => {
   );
 });
 
+// Payments switch (src/config/payments.ts). Default for these tests: ON.
+let mockPaymentsEnabled = true;
+jest.mock("@/config/payments", () => ({
+  get PAYMENTS_ENABLED() {
+    return mockPaymentsEnabled;
+  },
+}));
+
 const r = require("expo-router");
 
 const BOOKING_REF = "UF-2025-00001";
@@ -215,5 +223,24 @@ describe("OfferingCheckoutScreen", () => {
     await waitFor(() =>
       expect(useToastStore.getState().message).toBeTruthy()
     );
+  });
+
+  // PAY-01: switch OFF (the default build) stops before payment, no dead button.
+  describe("payments switch OFF", () => {
+    beforeEach(() => { mockPaymentsEnabled = false; });
+    afterEach(() => { mockPaymentsEnabled = true; });
+
+    it("shows the coming-soon notice instead of Pay Now and never calls Whish", async () => {
+      login();
+      routeNodeGet("unpaid");
+      renderWithProviders(<OfferingCheckoutScreen />);
+      expect(await screen.findByTestId("payments-unavailable")).toBeTruthy();
+      expect(screen.getByText("paymentsComingSoonTitle")).toBeTruthy();
+      expect(screen.queryByTestId("checkout-pay-now")).toBeNull();
+      const whishCalls = (nodeApi.post as jest.Mock).mock.calls.filter((c) =>
+        String(c[0]).includes("/webhook/payment/whish/url")
+      );
+      expect(whishCalls).toHaveLength(0);
+    });
   });
 });

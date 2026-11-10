@@ -19,7 +19,8 @@
         "EXPO_PUBLIC_AUTH0_AUDIENCE": "https://dev-gim0725gfieuvjxt.us.auth0.com/api/v2/",
         "EXPO_PUBLIC_APP_NAME": "UniFind",
         "EXPO_PUBLIC_DEFAULT_LANG": "en",
-        "EXPO_PUBLIC_DEFAULT_THEME": "system"
+        "EXPO_PUBLIC_DEFAULT_THEME": "system",
+        "EXPO_PUBLIC_PAYMENTS_ENABLED": "false"
       }
     },
     "production": {

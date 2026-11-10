@@ -59,6 +59,8 @@ import { PromoBlock } from "@/screens/checkout/PromoBlock";
 import { PriceBreakdown } from "@/screens/checkout/PriceBreakdown";
 import { PaymentMethodTabs } from "@/screens/checkout/PaymentMethodTabs";
 import { PaymentWebViewModal } from "@/screens/checkout/PaymentWebViewModal";
+import { PAYMENTS_ENABLED } from "@/config/payments";
+import { PaymentsUnavailableNotice } from "@/components/shared/PaymentsUnavailableNotice";
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -123,7 +125,7 @@ export default function OfferingCheckoutScreen() {
   }, [bookingRef]);
 
   const handlePay = async () => {
-    if (!bookingRef) return;
+    if (!bookingRef || !PAYMENTS_ENABLED) return;
     setPaying(true);
     try {
       const url = await paymentApi.getWhishUrl(bookingRef, notes);
@@ -293,21 +295,27 @@ export default function OfferingCheckoutScreen() {
 
         {/* Payment method + Pay Now */}
         <View className="bg-card rounded-2xl border border-border p-4 gap-4">
-          <PaymentMethodTabs selected="whish" />
+          {PAYMENTS_ENABLED ? (
+            <>
+              <PaymentMethodTabs selected="whish" />
 
-          <GradientView
-            colors={[colors.primary, colors.secondary]}
-            style={{ borderRadius: 14 }}
-          >
-            <Button
-              label={t("pay_now")}
-              onPress={handlePay}
-              disabled={paying}
-              variant="solid"
-              className="bg-transparent w-full"
-              testID="checkout-pay-now"
-            />
-          </GradientView>
+              <GradientView
+                colors={[colors.primary, colors.secondary]}
+                style={{ borderRadius: 14 }}
+              >
+                <Button
+                  label={t("pay_now")}
+                  onPress={handlePay}
+                  disabled={paying}
+                  variant="solid"
+                  className="bg-transparent w-full"
+                  testID="checkout-pay-now"
+                />
+              </GradientView>
+            </>
+          ) : (
+            <PaymentsUnavailableNotice />
+          )}
         </View>
       </ScrollView>
     </ScreenContainer>

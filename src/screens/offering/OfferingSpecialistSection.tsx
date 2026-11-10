@@ -33,6 +33,7 @@ import { showToast } from "@/stores/toastStore";
 import type { NodeOfferingDetail, NodeOfferingSpecialist, NodeOfferingEventType } from "@/api/nodeOfferingApi";
 import type { AvailabilityDate, AvailabilityPrice, TimeSlot } from "@/api/availabilityApi";
 import { getModeLabel, sortByMode } from "@/config/offeringModes";
+import { PAYMENTS_ENABLED } from "@/config/payments";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -156,6 +157,8 @@ export function OfferingSpecialistSection({ nodeOffering }: OfferingSpecialistSe
   };
 
   const handleBookSession = () => {
+    // Payments switch OFF: never create a pending booking that cannot be paid.
+    if (!PAYMENTS_ENABLED) return;
     requireAuth(async () => {
       if (!selectedSpecialistId) { showToast(t("selectSpecialistFirst")); return; }
       if (selectedDateIndex === null || !dates[selectedDateIndex]) { showToast(t("selectDateFirst")); return; }

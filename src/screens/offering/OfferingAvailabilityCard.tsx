@@ -17,6 +17,8 @@ import { OfferingTimeSlot } from "@/screens/offering/OfferingTimeSlot";
 import { OfferingPriceDisplay } from "@/screens/offering/OfferingPriceDisplay";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import type { AvailabilityDate, AvailabilityPrice, TimeSlot } from "@/api/availabilityApi";
+import { PAYMENTS_ENABLED } from "@/config/payments";
+import { PaymentsUnavailableNotice } from "@/components/shared/PaymentsUnavailableNotice";
 
 interface OfferingAvailabilityCardProps {
   dates: AvailabilityDate[];
@@ -125,14 +127,19 @@ export function OfferingAvailabilityCard({
         <View>
           <Divider className="my-2" />
           <OfferingPriceDisplay price={price} />
-          <Button
-            label={booking ? t("common.loading") : t("bookASession")}
-            action="primary"
-            variant="solid"
-            onPress={onBook}
-            disabled={booking}
-            className="w-full"
-          />
+          {PAYMENTS_ENABLED ? (
+            <Button
+              label={booking ? t("common.loading") : t("bookASession")}
+              action="primary"
+              variant="solid"
+              onPress={onBook}
+              disabled={booking}
+              className="w-full"
+              testID="offering-book-session"
+            />
+          ) : (
+            <PaymentsUnavailableNotice />
+          )}
         </View>
       )}
     </View>
