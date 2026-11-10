@@ -13,6 +13,7 @@
  */
 
 import { http } from "@/api/http";
+import { extractPlainText } from "@/api/catalog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -154,35 +155,53 @@ const ALL_DEGREE_TITLES = [
 
 // ─── Helper: map raw Strapi programs → AcademicData ─────────────────────────
 
+/** A degree arrives as a plain string (real endpoint) or as { title } (older shape). */
+function degreeTitleOf(d: unknown): string {
+  if (typeof d === "string") return d;
+  if (d && typeof (d as { title?: unknown }).title === "string") return (d as { title: string }).title;
+  return "";
+}
+
+function tabForDegree(title: string): keyof AcademicData {
+  const lower = title.toLowerCase();
+  for (const [tab, titles] of Object.entries(DEGREE_TITLE_MAP)) {
+    if (titles.some((v) => lower.includes(v.toLowerCase()))) return tab as keyof AcademicData;
+  }
+  return "Others";
+}
+
+/**
+ * Group faculties into the degree tabs. /api/programs/academic-units-info returns
+ * `degrees` as strings (e.g. ["Bachelor's / Licence", "Master's"]) and `about` as
+ * rich-text blocks. A faculty is listed under EVERY tab one of its degrees maps to
+ * (QA 2026-11-10: string degrees were all dumped into "Others", whose filter then
+ * excluded every program, and `about` rendered as "[object Object]").
+ */
 function mapProgramsToFacultyCampuses(data: unknown): AcademicData {
   const result: AcademicData = { Bachelors: [], Masters: [], PhD: [], Others: [] };
   if (!Array.isArray(data)) return result;
 
-  // data is an array of faculty objects: { facultyName, campuses, degrees[] }
   for (const faculty of data) {
+    const rawDegrees: unknown[] = Array.isArray(faculty.degrees) ? faculty.degrees : [];
+    const rawDescription = faculty.description || faculty.about || "";
     const entry: AcademicFaculty = {
       facultyName: faculty.facultyName || faculty.name || "-",
-      description: faculty.description || faculty.about || "",
+      description: typeof rawDescription === "string" ? rawDescription : extractPlainText(rawDescription),
       campuses: Array.isArray(faculty.campuses) ? faculty.campuses : [],
-      degrees: Array.isArray(faculty.degrees) ? faculty.degrees : [],
+      degrees: rawDegrees.map((d) =>
+        typeof d === "string" ? ({ id: 0, documentId: "", title: d } as AcademicDegree) : (d as AcademicDegree)
+      ),
     };
 
-    // Bin by first degree type, fall through to Others
-    let placed = false;
-    for (const [tab, titles] of Object.entries(DEGREE_TITLE_MAP)) {
-      if (
-        entry.degrees.some(
-          (d: AcademicDegree) =>
-            typeof d.title === "string" &&
-            titles.some((t) => d.title.toLowerCase().includes(t.toLowerCase()))
-        )
-      ) {
-        (result[tab as keyof AcademicData] as AcademicFaculty[]).push(entry);
-        placed = true;
-        break;
-      }
+    const tabs = new Set<keyof AcademicData>();
+    for (const d of rawDegrees) {
+      const title = degreeTitleOf(d);
+      if (title) tabs.add(tabForDegree(title));
     }
-    if (!placed) result.Others.push(entry);
+    if (tabs.size === 0) tabs.add("Others");
+    for (const tab of ["Bachelors", "Masters", "PhD", "Others"] as const) {
+      if (tabs.has(tab)) result[tab].push(entry);
+    }
   }
 
   return result;

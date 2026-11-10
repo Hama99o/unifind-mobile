@@ -131,6 +131,38 @@ describe("institutionDetailApi.getAcademicUnitsInfo", () => {
     expect(result.Others[0].facultyName).toBe("-");
   });
 
+  // Real staging shape (QA 2026-11-10): degrees are strings, about is rich text.
+  it("real shape: string degrees go to every matching tab, rich-text about becomes plain text", async () => {
+    mockGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 535,
+          name: "Faculty of Technology",
+          about: [{ type: "paragraph", children: [{ text: "Preparing students." }] }],
+          campuses: ["Saida", "Abey"],
+          degrees: ["Bachelor's / Licence", "Master's"],
+        },
+        { id: 536, name: "Faculty of Arts", campuses: [], degrees: ["Teaching Diploma"] },
+      ],
+    });
+    const result = await institutionDetailApi.getAcademicUnitsInfo("lebanese-university", "en");
+    expect(result.Bachelors.map((f) => f.facultyName)).toEqual(["Faculty of Technology"]);
+    expect(result.Masters.map((f) => f.facultyName)).toEqual(["Faculty of Technology"]);
+    expect(result.Others.map((f) => f.facultyName)).toEqual(["Faculty of Arts"]);
+    expect(result.Bachelors[0].description).toBe("Preparing students.");
+    expect(result.Bachelors[0].degrees.map((d) => d.title)).toEqual(["Bachelor's / Licence", "Master's"]);
+  });
+
+  it("real shape: Arabic degree titles map to the same tabs", async () => {
+    mockGet.mockResolvedValueOnce({
+      data: [{ name: "كلية العلوم", campuses: [], degrees: ["بكالوريوس / إجازة", "دكتوراه"] }],
+    });
+    const result = await institutionDetailApi.getAcademicUnitsInfo("lu", "ar");
+    expect(result.Bachelors).toHaveLength(1);
+    expect(result.PhD).toHaveLength(1);
+    expect(result.Others).toHaveLength(0);
+  });
+
   it("returns all-empty groups when data is not an array", async () => {
     mockGet.mockResolvedValueOnce({ data: { not: "array" } });
     const result = await institutionDetailApi.getAcademicUnitsInfo("aub", "en");
