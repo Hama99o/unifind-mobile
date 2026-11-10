@@ -702,5 +702,7 @@
   "aboutUsWhyUsCardDescription": "Combines academic, career, mentorship, and institutional insights to support students and institutions.",
   "aboutUsWhyUsCardDescription2": "Connects students to professionals for practice advice and career paths.",
   "aboutUsWhyUsCardDescription3": "Equips students with practical tools and expert with labor market needs.",
-  "aboutUsWhyUsCardDescription4": "Lebanon’s only free centralized platform for all majors and universities."
+  "aboutUsWhyUsCardDescription4": "Lebanon’s only free centralized platform for all majors and universities.",
+  "paymentPageLoadError": "The payment page could not be loaded. Check your connection and try again.",
+  "paymentCancelled": "Payment not completed. You can try again from this page."
 }

@@ -130,8 +130,11 @@ export default function OfferingCheckoutScreen() {
 
   const handleWebViewClose = () => {
     setCollectUrl(null);
-    // Reconcile payment status on user dismissal (the query re-checks it first).
-    void checkoutQuery.refetch();
+    // Reconcile payment status on user dismissal (the query re-checks it first);
+    // tell the user when nothing was paid (cancel path, PAY-02).
+    void checkoutQuery.refetch().then((r) => {
+      if (!r.data?.paid) showToast(t("paymentCancelled"));
+    });
   };
 
   // ─── Render states ────────────────────────────────────────────────────────────

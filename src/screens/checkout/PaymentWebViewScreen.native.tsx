@@ -11,36 +11,15 @@
  * included in the web bundle.
  */
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { Text } from "@/components/ui/text";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
-
-const PAYMENT_STATUS_PATH = "/find/offerings/checkout/payment-status";
-
-function parseQueryParams(url: string): Record<string, string> {
-  try {
-    const urlObj = new URL(url);
-    const params: Record<string, string> = {};
-    urlObj.searchParams.forEach((v, k) => {
-      params[k] = v;
-    });
-    return params;
-  } catch {
-    const queryIndex = url.indexOf("?");
-    if (queryIndex === -1) return {};
-    const query = url.slice(queryIndex + 1);
-    const params: Record<string, string> = {};
-    query.split("&").forEach((pair) => {
-      const [k, v] = pair.split("=");
-      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v ?? "");
-    });
-    return params;
-  }
-}
+import { Button } from "@/components/ui/button";
+import { classifyPaymentRedirect, type PaymentRedirect } from "@/screens/checkout/paymentRedirect";
 
 export interface PaymentWebViewScreenProps {
   collectUrl: string;
@@ -48,18 +27,21 @@ export interface PaymentWebViewScreenProps {
   onClose: () => void;
 }
 
-function navigateToPaymentStatus(url: string) {
-  const params = parseQueryParams(url);
-  const status = params.status ?? "failed";
-  const bookingRef = params.bookingRef ?? "";
+function navigateToPaymentStatus(redirect: PaymentRedirect) {
   router.replace({
     pathname: "/(main)/offerings/checkout/payment-status" as never,
-    params: { status, bookingRef },
+    params: {
+      status: redirect.status,
+      bookingRef: redirect.bookingRef,
+      ...(redirect.message ? { message: redirect.message } : {}),
+    },
   });
 }
 
 export function PaymentWebViewScreen({
   collectUrl,
+  bookingReference,
+  onClose,
 }: PaymentWebViewScreenProps) {
   const colors = useColors();
   const { t } = useCustomTranslation();
@@ -70,29 +52,51 @@ export function PaymentWebViewScreen({
    */
   const navigatedRef = useRef(false);
 
-  const handleNavigationStateChange = (state: { url: string }) => {
-    if (state.url && state.url.includes(PAYMENT_STATUS_PATH)) {
-      if (navigatedRef.current) return;
-      navigatedRef.current = true;
-      navigateToPaymentStatus(state.url);
-    }
-  };
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
-  const handleShouldStartLoad = (request: { url: string }): boolean => {
-    if (request.url && request.url.includes(PAYMENT_STATUS_PATH)) {
-      if (!navigatedRef.current) {
-        navigatedRef.current = true;
-        navigateToPaymentStatus(request.url);
-      }
-      return false;
+  /** Returns true when the URL was a backend redirect we handled in-app. */
+  const intercept = (url: string): boolean => {
+    const redirect = classifyPaymentRedirect(url, bookingReference);
+    if (!redirect) return false;
+    if (!navigatedRef.current) {
+      navigatedRef.current = true;
+      navigateToPaymentStatus(redirect);
     }
     return true;
   };
 
+  const handleNavigationStateChange = (state: { url: string }) => {
+    if (state.url) intercept(state.url);
+  };
+
+  const handleShouldStartLoad = (request: { url: string }): boolean => !intercept(request.url);
+
+  if (loadError) {
+    return (
+      <View
+        testID="payment-webview-error"
+        style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12, backgroundColor: colors.background }}
+      >
+        <Text className="text-base font-semibold text-foreground text-center">{t("paymentPageLoadError")}</Text>
+        <Button
+          label={t("common.retry")}
+          onPress={() => {
+            setLoadError(false);
+            setAttempt((n) => n + 1);
+          }}
+        />
+        <Button label={t("common.close")} variant="outline" onPress={onClose} />
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <WebView
+        key={attempt}
         source={{ uri: collectUrl }}
+        onError={() => setLoadError(true)}
         onNavigationStateChange={handleNavigationStateChange}
         onShouldStartLoadWithRequest={handleShouldStartLoad}
         startInLoadingState
