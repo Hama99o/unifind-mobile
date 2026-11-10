@@ -7,7 +7,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
  * Inside each tab, screens use their own in-screen tabs/segments. */
 export default function TabsLayout() {
   const colors = useColors();
-  const { t } = useCustomTranslation();
+  const { t, isRtl } = useCustomTranslation();
 
   return (
     <Tabs
@@ -21,6 +21,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.background,
           borderTopColor: colors.border,
+          // Native layout stays LTR (RTL is mirrored by hand, see i18n/language.ts);
+          // Yoga `direction` mirrors the tab order for Arabic. Inherited by the items.
+          direction: isRtl ? "rtl" : "ltr",
         },
       }}
     >
@@ -29,7 +32,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.home"),
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
-          tabBarTestID: "tab-home",
+          tabBarButtonTestID: "tab-home",
           tabBarAccessibilityLabel: "Home",
         }}
       />
@@ -38,7 +41,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.programExplorer"),
           tabBarIcon: ({ color, size }) => <Compass color={color} size={size} />,
-          tabBarTestID: "tab-program-explorer",
+          tabBarButtonTestID: "tab-program-explorer",
           tabBarAccessibilityLabel: "Program Explorer",
         }}
       />
@@ -47,7 +50,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.growthCenter"),
           tabBarIcon: ({ color, size }) => <GraduationCap color={color} size={size} />,
-          tabBarTestID: "tab-growth-center",
+          tabBarButtonTestID: "tab-growth-center",
           tabBarAccessibilityLabel: "Growth Center",
         }}
       />
@@ -56,7 +59,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.profile"),
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
-          tabBarTestID: "tab-profile",
+          tabBarButtonTestID: "tab-profile",
           tabBarAccessibilityLabel: "Profile",
         }}
       />
