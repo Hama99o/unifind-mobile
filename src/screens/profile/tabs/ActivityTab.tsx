@@ -18,7 +18,6 @@
  * §S2 — trash hitSlop 8→16
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
 import { ScrollView, View, ActivityIndicator, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Trash2, Star } from "lucide-react-native";
@@ -35,6 +34,8 @@ import { useColors } from "@/hooks/useColors";
 import { brand } from "@/config/theme";
 import { reviewsApi, type NormalizedReview } from "@/api/reviewsApi";
 import { showToast } from "@/stores/toastStore";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/authStore";
 
 const LIMIT = 4;
 
@@ -154,14 +155,9 @@ export function ActivityTab() {
   const { t } = useCustomTranslation();
   const colors = useColors();
 
-  const [reviews, setReviews] = useState<NormalizedReview[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const loadingRef = useRef(false);
-
+  // Infinite list on React Query: cached per user; page N+1 loads near the bottom.
+  // (The old hand-rolled loader set its busy flag before calling itself, so
+  // "load more" never ran past page 1.)
   const categoryLabels = {
     quality: t("activityQuality"),
     campusFacilities: t("activityCampusFacilities"),
@@ -171,63 +167,43 @@ export function ActivityTab() {
     recommendOffering: t("activityRecommendOffering"),
   };
 
-  const fetchReviews = useCallback(
-    async (pageNum: number, reset = false) => {
-      if (loadingRef.current) return;
-      loadingRef.current = true;
-      if (reset) setInitialLoading(true);
-      else setLoading(true);
-      setError(null);
-
-      try {
-        const res = await reviewsApi.getUserReviews(pageNum, LIMIT);
-        const rawList = Array.isArray(res.data) ? res.data : [];
-        setTotalPages(res.totalPages || 1);
-
-        const normalized = await Promise.all(
-          rawList.map((r) => reviewsApi.normalizeReview(r, categoryLabels))
-        );
-
-        setReviews((prev) => {
-          if (reset || pageNum === 1) return normalized;
-          const existingIds = new Set(prev.map((r) => r.id));
-          return [...prev, ...normalized.filter((r) => !existingIds.has(r.id))];
-        });
-      } catch {
-        setError(t("common.retry"));
-      } finally {
-        setInitialLoading(false);
-        setLoading(false);
-        loadingRef.current = false;
-      }
+  const userId = useAuthStore((s) => s.user?.userID);
+  const queryClient = useQueryClient();
+  const reviewsKey = ["user", userId ?? "anon", "myReviews"] as const;
+  const reviewsQuery = useInfiniteQuery({
+    queryKey: reviewsKey,
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const res = await reviewsApi.getUserReviews(pageParam, LIMIT);
+      const rawList = Array.isArray(res.data) ? res.data : [];
+      const items = await Promise.all(rawList.map((r) => reviewsApi.normalizeReview(r, categoryLabels)));
+      return { items, page: pageParam, totalPages: res.totalPages || 1 };
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+    getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
+  });
 
-  useEffect(() => {
-    fetchReviews(1, true);
-  }, []);
+  const seen = new Set<string>();
+  const reviews: NormalizedReview[] = (reviewsQuery.data?.pages ?? [])
+    .flatMap((p) => p.items)
+    .filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
+  const initialLoading = reviewsQuery.isPending;
+  const loading = reviewsQuery.isFetchingNextPage;
+  const error = reviewsQuery.isError && !reviewsQuery.data ? t("common.retry") : null;
+  const fetchReviews = (_page: number, _reset?: boolean) => void reviewsQuery.refetch();
 
   const handleDelete = async (reviewId: string) => {
     try {
       await reviewsApi.deleteReview(reviewId);
       showToast(t("activityReviewDeleted"));
-      setReviews([]);
-      setPage(1);
-      fetchReviews(1, true);
+      // Refetch from page 1 (also refreshes any other view of my reviews).
+      await queryClient.invalidateQueries({ queryKey: reviewsKey });
     } catch {
       showToast(t("profileDeleteError"));
     }
   };
 
   const handleLoadMore = () => {
-    if (page < totalPages && !loadingRef.current) {
-      loadingRef.current = true;
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchReviews(nextPage);
-    }
+    if (reviewsQuery.hasNextPage && !reviewsQuery.isFetchingNextPage) void reviewsQuery.fetchNextPage();
   };
 
   return (
