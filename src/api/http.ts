@@ -1,3 +1,4 @@
+import { REQUEST_TIMEOUT_MS } from "@/api/timeouts";
 import axios from "axios";
 
 /**
@@ -11,6 +12,7 @@ import axios from "axios";
  */
 export const http = axios.create({
   baseURL: process.env.EXPO_PUBLIC_STRAPI_API_URL,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
     ...(process.env.EXPO_PUBLIC_STRAPI_BEARER

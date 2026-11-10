@@ -8,6 +8,9 @@
  */
 
 import axios, { type AxiosRequestConfig } from "axios";
+import { REQUEST_TIMEOUT_MS } from "@/api/timeouts";
+
+export { REQUEST_TIMEOUT_MS };
 import { useAuthStore } from "@/stores/authStore";
 import { secureStorage, TOKEN_KEYS } from "@/utils/secure-storage";
 
@@ -16,9 +19,11 @@ interface RetryableRequestConfig extends AxiosRequestConfig {
   _retried?: boolean;
 }
 
+
 export const nodeApi = axios.create({
   baseURL: process.env.EXPO_PUBLIC_NODE_API_URL,
   headers: { "Content-Type": "application/json" },
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 // ─── Request interceptor — attach access token ─────────────────────────────────
@@ -40,9 +45,26 @@ export function registerNodeApiRefreshFn(fn: () => Promise<boolean>) {
 
 // ─── Response interceptor — 401 → refresh-and-retry ───────────────────────────
 
+// Dev-only: method, path, status and duration of each call (never headers or
+// tokens) to diagnose hanging/failing endpoints during QA.
+const devLog = (cfg: { method?: string; url?: string; metadata?: number } | undefined, status: unknown) => {
+  if (!__DEV__ || !cfg) return;
+  const ms = cfg.metadata ? Date.now() - cfg.metadata : -1;
+  console.log("[nodeApi]", (cfg.method ?? "get").toUpperCase(), cfg.url, status, `${ms}ms`);
+};
+nodeApi.interceptors.request.use((config) => {
+  (config as { metadata?: number }).metadata = Date.now();
+  return config;
+});
+
 nodeApi.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    devLog(response.config as never, response.status);
+    return response;
+  },
   async (error: unknown) => {
+    const e = error as { config?: never; response?: { status?: number }; code?: string };
+    devLog(e.config, e.response?.status ?? e.code ?? "ERR");
     const axiosError = error as { response?: { status?: number }; config?: RetryableRequestConfig };
     const originalRequest = axiosError.config;
 
