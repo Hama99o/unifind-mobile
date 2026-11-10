@@ -28,7 +28,7 @@
  *   PaymentWebViewModal.tsx     — full-screen Modal shell around PaymentWebViewScreen
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { CheckCircle } from "lucide-react-native";
@@ -61,6 +61,7 @@ import { PaymentMethodTabs } from "@/screens/checkout/PaymentMethodTabs";
 import { PaymentWebViewModal } from "@/screens/checkout/PaymentWebViewModal";
 import { PAYMENTS_ENABLED } from "@/config/payments";
 import { PaymentsUnavailableNotice } from "@/components/shared/PaymentsUnavailableNotice";
+import { useQuery } from "@tanstack/react-query";
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -69,60 +70,41 @@ export default function OfferingCheckoutScreen() {
   const { t } = useCustomTranslation();
   const colors = useColors();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const userId = useAuthStore((s) => s.user?.userID);
   const { open: openSignIn } = useSignInSheet();
 
-  const [booking, setBooking] = useState<CheckoutBooking | null>(null);
-  const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [alreadyPaid, setAlreadyPaid] = useState(false);
   const [notes, setNotes] = useState("");
   const [localPromo, setLocalPromo] = useState<AppliedPromo | null>(null);
   const [overrideFinalPrice, setOverrideFinalPrice] = useState<number | null>(null);
   const [paying, setPaying] = useState(false);
   const [collectUrl, setCollectUrl] = useState<string | null>(null);
 
-  // Auth gate: if not logged in, show SignInSheet
-  useEffect(() => {
-    if (!isLoggedIn) {
-      openSignIn();
-    }
-  }, [isLoggedIn]);
-
   const bookingRef = Array.isArray(id) ? id[0] : id ?? "";
 
-  const load = async () => {
-    if (!bookingRef) return;
-    setLoading(true);
-    setError(null);
-    try {
-      // 1. Check payment status first — guard against re-paying
+  // Server state (React Query). staleTime 0: payment state is re-checked on
+  // every visit, never served from an old cache.
+  const checkoutQuery = useQuery({
+    queryKey: ["user", userId ?? "anon", "checkout", bookingRef],
+    enabled: isLoggedIn && !!bookingRef,
+    staleTime: 0,
+    queryFn: async () => {
+      // 1. Payment status first — guard against re-paying
       const payStatus = await bookingsApi.getPaymentStatus(bookingRef);
-      if (payStatus === "paid") {
-        setAlreadyPaid(true);
-        setLoading(false);
-        return;
-      }
-      // 2. Fetch flat checkout booking shape
+      if (payStatus === "paid") return { paid: true as const, booking: null, imageUrl: "" };
+      // 2. Flat checkout booking shape  3. Offering image from Strapi
       const data = await bookingsApi.getById(bookingRef);
-      setBooking(data);
-      // 3. Fetch offering image from Strapi if offeringContentId present
-      if (data.offeringId?.offeringContentId) {
-        const img = await bookingsApi.getOfferingImageUrl(
-          data.offeringId.offeringContentId
-        );
-        setImageUrl(img);
-      }
-    } catch {
-      setError(t("profileLoadError"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, [bookingRef]);
+      const imageUrl = data.offeringId?.offeringContentId
+        ? await bookingsApi.getOfferingImageUrl(data.offeringId.offeringContentId)
+        : "";
+      return { paid: false as const, booking: data, imageUrl };
+    },
+  });
+  const booking: CheckoutBooking | null = checkoutQuery.data?.booking ?? null;
+  const imageUrl = checkoutQuery.data?.imageUrl ?? "";
+  const alreadyPaid = checkoutQuery.data?.paid === true;
+  const loading = checkoutQuery.isPending;
+  const error = checkoutQuery.isError ? t("profileLoadError") : null;
+  const load = () => void checkoutQuery.refetch();
 
   const handlePay = async () => {
     if (!bookingRef || !PAYMENTS_ENABLED) return;
@@ -148,10 +130,8 @@ export default function OfferingCheckoutScreen() {
 
   const handleWebViewClose = () => {
     setCollectUrl(null);
-    // Reconcile payment status on user dismissal
-    bookingsApi.getPaymentStatus(bookingRef).then((s) => {
-      if (s === "paid") setAlreadyPaid(true);
-    });
+    // Reconcile payment status on user dismissal (the query re-checks it first).
+    void checkoutQuery.refetch();
   };
 
   // ─── Render states ────────────────────────────────────────────────────────────
@@ -163,6 +143,11 @@ export default function OfferingCheckoutScreen() {
         <EmptyState
           title={t("signInRequired")}
           description={t("signInDescription")}
+          action={
+            <View className="w-full">
+              <Button label={t("signIn")} onPress={openSignIn} testID="checkout-sign-in" />
+            </View>
+          }
         />
       </ScreenContainer>
     );
@@ -273,16 +258,8 @@ export default function OfferingCheckoutScreen() {
           onPromoRemoved={(newFinalPrice) => {
             setLocalPromo(null);
             setOverrideFinalPrice(newFinalPrice);
-            setBooking((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    appliedPromoCode: null,
-                    pricing: { ...prev.pricing, discountAmount: 0 },
-                    finalPrice: newFinalPrice,
-                  }
-                : prev
-            );
+            // Server is the source of truth for the booking after a promo change.
+            void checkoutQuery.refetch();
           }}
         />
 

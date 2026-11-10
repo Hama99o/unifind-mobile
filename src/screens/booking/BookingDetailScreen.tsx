@@ -18,7 +18,7 @@
  * Entrance: FadeInDown.duration(280).springify() (§S7).
  */
 
-import { useEffect, useState, useRef } from "react";
+import { useRef } from "react";
 import { ScrollView, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -39,6 +39,7 @@ import { useLocalization } from "@/hooks/useLocalization";
 import { useColors } from "@/hooks/useColors";
 import { bookingsApi, type BookingDetailData, capitalizeStatus, toPaymentStatus } from "@/api/bookingsApi";
 import { StatusPill } from "@/components/shared/StatusPill";
+import { useAsyncResource } from "@/hooks/useAsyncResource";
 
 // ─── Skeleton — content-shaped (§S3: ref+pill, stepper, session, payment) ─────
 
@@ -86,32 +87,27 @@ export default function BookingDetailScreen() {
     return "USD";
   };
 
-  const [bookingData, setBookingData] = useState<BookingDetailData | null>(null);
-  const [offeringImageUrl, setOfferingImageUrl] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const reviewRef = useRef<ScrollView>(null);
-
-  const load = async () => {
-    if (!bookingReference) return;
-    setLoading(true);
-    setError(null);
+  // Per-user server data via React Query (useAsyncResource): cached per booking.
+  const {
+    data: loaded,
+    loading: queryLoading,
+    error,
+    reload: load,
+  } = useAsyncResource(["bookingDetail", bookingReference ?? ""], async () => {
     try {
-      const data = await bookingsApi.getDetails(bookingReference);
-      setBookingData(data);
-
-      if (data.offering?.offeringContentId) {
-        const imgUrl = await bookingsApi.getOfferingImageUrl(data.offering.offeringContentId);
-        setOfferingImageUrl(imgUrl);
-      }
+      const data = await bookingsApi.getDetails(bookingReference!);
+      const imageUrl = data.offering?.offeringContentId
+        ? await bookingsApi.getOfferingImageUrl(data.offering.offeringContentId)
+        : "";
+      return { data, imageUrl };
     } catch {
-      setError(t("profileLoadError"));
-    } finally {
-      setLoading(false);
+      throw new Error(t("profileLoadError"));
     }
-  };
-
-  useEffect(() => { load(); }, [bookingReference]);
+  });
+  const bookingData: BookingDetailData | null = loaded?.data ?? null;
+  const offeringImageUrl = loaded?.imageUrl ?? "";
+  const loading = !!bookingReference && queryLoading;
+  const reviewRef = useRef<ScrollView>(null);
 
   if (loading) {
     return (

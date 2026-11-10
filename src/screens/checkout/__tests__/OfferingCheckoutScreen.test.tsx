@@ -134,14 +134,16 @@ describe("OfferingCheckoutScreen", () => {
     jest.restoreAllMocks();
   });
 
-  it("shows the sign-in-required state and opens the sheet when logged out", async () => {
+  it("shows the sign-in-required state; its Sign In button opens the sheet (no auto-open)", async () => {
     logout();
     renderWithProviders(<OfferingCheckoutScreen />);
     // EmptyState title key + description key are rendered.
     expect(await screen.findByText("signInRequired")).toBeTruthy();
     expect(screen.getByText("signInDescription")).toBeTruthy();
-    // The auth-gate effect opens the global sign-in sheet.
-    await waitFor(() => expect(useSignInSheetStore.getState().isOpen).toBe(true));
+    // BUG-04: no auto-open (a global sheet must not cover the page); explicit action instead.
+    expect(useSignInSheetStore.getState().isOpen).toBe(false);
+    fireEvent.press(screen.getByTestId("checkout-sign-in"));
+    expect(useSignInSheetStore.getState().isOpen).toBe(true);
   });
 
   it("renders the checkout summary, notes, promo input and pay button when unpaid", async () => {
