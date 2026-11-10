@@ -9,7 +9,7 @@
  * Each tab manages its own scrolling internally.
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 import { User } from "lucide-react-native";
 import { ScreenContainer } from "@/components/shared/ScreenContainer";
@@ -21,7 +21,6 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { useAuthStore } from "@/stores/authStore";
 import { useSignInSheet } from "@/auth/useSignInSheet";
-import { profileApi } from "@/api/profileApi";
 
 import { ProfileHeader } from "./profile/ProfileHeader";
 import { ProfileTabBar, type ProfileTab } from "./profile/ProfileTabBar";
@@ -32,6 +31,7 @@ import { ActivityTab } from "./profile/tabs/ActivityTab";
 import { FavoritesTab } from "./profile/tabs/FavoritesTab";
 import { ComparisonsTab } from "./profile/tabs/ComparisonsTab";
 import { BookingsTab } from "./profile/tabs/BookingsTab";
+import { useUserInfo } from "@/hooks/queries/useProfile";
 
 // ─── Logged-out view ──────────────────────────────────────────────────────────
 
@@ -74,20 +74,13 @@ function SignedOutProfile() {
 
 function SignedInProfile() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState("");
-  const [email, setEmail] = useState("");
-
-  // Load name + role + email for header (best-effort — falls back to Auth0 data in store)
-  useEffect(() => {
-    profileApi.getUserInfo().then((info) => {
-      setFirstName(info.firstName ?? "");
-      setLastName(info.lastName ?? "");
-      setRole(info.role ?? "");
-      setEmail(info.email ?? "");
-    }).catch(() => {});
-  }, []);
+  // Header data from the shared, cached user info (React Query) — refreshes
+  // automatically after Profile Information is saved.
+  const { data: info } = useUserInfo();
+  const firstName = info?.firstName ?? "";
+  const lastName = info?.lastName ?? "";
+  const role = info?.role ?? "";
+  const email = info?.email ?? "";
 
   const renderTabContent = () => {
     switch (activeTab) {

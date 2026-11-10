@@ -6,7 +6,7 @@
  * Error: bg-destructive/10 border border-destructive with CircleAlert + reset button stays visible.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View, ScrollView } from "react-native";
 import { CircleCheck, CircleAlert } from "lucide-react-native";
 import { Heading } from "@/components/ui/heading";
@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { VStack } from "@/components/ui/box";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
-import { profileApi } from "@/api/profileApi";
+import { useUserInfo } from "@/hooks/queries/useProfile";
 
 const AUTH0_DOMAIN = process.env.EXPO_PUBLIC_AUTH0_DOMAIN as string;
 const AUTH0_CLIENT_ID = process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID as string;
@@ -43,26 +43,13 @@ export function AccountCredentialsTab() {
   const { t } = useCustomTranslation();
   const colors = useColors();
 
-  const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
+  // Shared, cached user info (React Query) — same entry as the profile header.
+  const infoQuery = useUserInfo();
+  const loading = infoQuery.isPending;
+  const email = infoQuery.data?.email ?? "";
   const [resetting, setResetting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      try {
-        const info = await profileApi.getUserInfo();
-        setEmail(info.email ?? "");
-      } catch {
-        // non-fatal — email stays empty
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, []);
 
   const handleResetPassword = async () => {
     if (!email) return;

@@ -13,7 +13,7 @@
  * paddingBottom: 80 for keyboard clearance.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   ScrollView,
@@ -31,6 +31,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { showToast } from "@/stores/toastStore";
 import { profileApi, type Country } from "@/api/profileApi";
+import { useCountries, useInvalidateUserInfo, useUserInfo } from "@/hooks/queries/useProfile";
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -112,9 +113,7 @@ export function ProfileInformationTab() {
   const { t, isRtl } = useCustomTranslation();
   const colors = useColors();
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -126,43 +125,42 @@ export function ProfileInformationTab() {
   const [city, setCity] = useState("");
   const [gender, setGender] = useState("");
 
-  const [countries, setCountries] = useState<Country[]>([]);
+  // Server state (React Query): shared, cached user info + countries.
+  const infoQuery = useUserInfo();
+  const countriesQuery = useCountries();
+  const invalidateUserInfo = useInvalidateUserInfo();
+  const countries: Country[] = countriesQuery.data ?? [];
+  const loading = infoQuery.isPending || countriesQuery.isPending;
+  const error = infoQuery.isError || countriesQuery.isError ? t("profileLoadError") : null;
 
   const genderOptions = [
     { label: t("profileGenderMale"), value: "Male" },
     { label: t("profileGenderFemale"), value: "Female" },
   ];
 
-  const init = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [info, countryList] = await Promise.all([
-        profileApi.getUserInfo(),
-        profileApi.getCountries(),
-      ]);
-      setFirstName(info.firstName ?? "");
-      setLastName(info.lastName ?? "");
-      setPhone(info.phoneNumber ?? "");
-      setDialCode(info.dialCode ?? "");
-      if (info.dateOfBirth) {
-        setDob(parseDate(info.dateOfBirth));
-      }
-      setRole(info.role ?? "");
-      setCountry(info.country ?? "");
-      setCity(info.city ?? "");
-      setGender(info.gender ?? "");
-      setCountries(countryList);
-    } catch {
-      setError(t("profileLoadError"));
-    } finally {
-      setLoading(false);
-    }
+  const init = () => {
+    void infoQuery.refetch();
+    void countriesQuery.refetch();
   };
 
+  // Seed the editable form once from the loaded profile (never overwrite edits).
+  const seeded = useRef(false);
   useEffect(() => {
-    init();
-  }, []);
+    const info = infoQuery.data;
+    if (!info || seeded.current) return;
+    seeded.current = true;
+    setFirstName(info.firstName ?? "");
+    setLastName(info.lastName ?? "");
+    setPhone(info.phoneNumber ?? "");
+    setDialCode(info.dialCode ?? "");
+    if (info.dateOfBirth) {
+      setDob(parseDate(info.dateOfBirth));
+    }
+    setRole(info.role ?? "");
+    setCountry(info.country ?? "");
+    setCity(info.city ?? "");
+    setGender(info.gender ?? "");
+  }, [infoQuery.data]);
 
   const countryOptions = countries.map((c) => ({
     label: c.countryName,
@@ -204,6 +202,7 @@ export function ProfileInformationTab() {
         gender,
       });
       showToast(t("profileInfoSuccess"));
+      void invalidateUserInfo();
     } catch {
       showToast(t("profileInfoError"));
     } finally {
