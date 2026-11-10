@@ -516,7 +516,7 @@
   "subscribe": "اشترك في نشرتنا الإخبارية واستمتع بأحدث تحديثاتنا",
   "emailPlaceHolder": "أدخل بريدك الإلكتروني",
   "btnSubscribe": "اشترك",
-  "rights": "© ٢٠٢٥ UniFind Online جميع الحقوق محفوظة.",
+  "rights": "© {{year}} UniFind Online جميع الحقوق محفوظة.",
   "unifind_location": "الشوف، لبنان",
   "navAboutUs": "من نحن",
   "contact_us": "تواصل معنا",

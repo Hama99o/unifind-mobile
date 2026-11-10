@@ -516,7 +516,7 @@
   "subscribe": "Subscribe to our newsletter and enjoy our latest updates.",
   "emailPlaceHolder": "Enter your email",
   "btnSubscribe": "Subscribe",
-  "rights": "© Copyright 2025 UniFind.Online All Rights Reserved",
+  "rights": "© Copyright {{year}} UniFind.Online All Rights Reserved",
   "unifind_location": "Chouf, Lebanon",
   "navAboutUs": "About Us",
   "contact_us": "Contact Us",

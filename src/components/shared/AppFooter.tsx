@@ -35,6 +35,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { showToast } from "@/stores/toastStore";
 import { subscribeNewsletter } from "@/api/newsletterApi";
+import { useLocalization } from "@/hooks/useLocalization";
 
 // ─── Social links (from web usePageData.ts) ──────────────────────────────────
 
@@ -105,6 +106,7 @@ function NavSection({
 
 export function AppFooter() {
   const { t, isRtl } = useCustomTranslation();
+  const { formatNumber } = useLocalization();
   const router = useRouter();
   const colors = useColors();
 
@@ -285,7 +287,7 @@ export function AppFooter() {
         </Pressable>
 
         <Text className="text-white/85 text-xs text-center">
-          {t("rights")}
+          {t("rights", { year: formatNumber(new Date().getFullYear(), { useGrouping: false }) })}
         </Text>
       </View>
     </View>
