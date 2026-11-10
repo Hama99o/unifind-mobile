@@ -9,7 +9,7 @@
  * RTL-safe. Gluestack only.
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState } from "react";
 import { View, Pressable } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import { ChevronDown, ChevronUp } from "lucide-react-native";
@@ -22,6 +22,7 @@ import { useSelection } from "@/hooks/useSelection";
 import { institutionDetailApi, DEGREE_TITLE_MAP } from "@/api/institutionDetailApi";
 import type { AcademicFaculty, ProgramForFaculty } from "@/api/institutionDetailApi";
 import { AcademicProgramCard } from "@/screens/institution/AcademicProgramCard";
+import { useQuery } from "@tanstack/react-query";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,46 +50,26 @@ export function FacultyAccordion({
   const { t, isRtl } = useCustomTranslation();
   const colors = useColors();
   const [open, setOpen] = useState(isFirst);
-  const [programs, setPrograms] = useState<ProgramForFaculty[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
   // H1 fix: use canonical selection hook (handles auth gate, optimistic, rollback, toast)
   const { isFavorite, isCompared, toggleFavorite, toggleCompare } = useSelection();
 
-  const loadPrograms = useCallback(async () => {
-    if (loaded) return;
-    setLoading(true);
-    try {
-      const degreeTitles = DEGREE_TITLE_MAP[activeTab] ?? [];
-      const isOthers = activeTab === "Others";
-      const progs = await institutionDetailApi.getProgramsForFaculty(
+  // React Query: fetched the first time the accordion opens, then cached per
+  // institution + faculty + degree tab + locale (reopening is instant).
+  const isOthers = activeTab === "Others";
+  const programsQuery = useQuery({
+    queryKey: ["facultyPrograms", institutionSlug, faculty.facultyName, activeTab, locale],
+    queryFn: () =>
+      institutionDetailApi.getProgramsForFaculty(
         institutionSlug,
         faculty.facultyName,
-        isOthers ? [] : degreeTitles,
+        isOthers ? [] : DEGREE_TITLE_MAP[activeTab] ?? [],
         locale,
         isOthers
-      );
-      setPrograms(progs);
-      setLoaded(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [loaded, activeTab, institutionSlug, faculty.facultyName, locale]);
-
-  useEffect(() => {
-    if (open) {
-      loadPrograms();
-    }
-  }, [open, loadPrograms]);
-
-  // Reset when tab changes — key prop on FacultyAccordion remounts the component
-  // but keep this for safety if key ever changes behavior
-  useEffect(() => {
-    setLoaded(false);
-    setPrograms([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+      ),
+    enabled: open,
+  });
+  const programs: ProgramForFaculty[] = programsQuery.data ?? [];
+  const loading = open && programsQuery.isPending;
 
   // H1 fix: delegate to canonical selection hook
   const handleToggleFavorite = (docId: string) => {
@@ -106,6 +87,8 @@ export function FacultyAccordion({
       {/* Header */}
       <Pressable
         onPress={() => setOpen(!open)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
         className={`flex-row items-center justify-between p-3 bg-card ${isRtl ? "flex-row-reverse" : ""}`}
       >
         <View className="flex-1 gap-1">
@@ -144,7 +127,7 @@ export function FacultyAccordion({
 
             {/* Programs */}
             {loading && <Spinner size="small" />}
-            {!loading && programs.length === 0 && loaded && (
+            {!loading && programs.length === 0 && programsQuery.isSuccess && (
               <Text className="text-xs text-muted-foreground">{t("common.empty")}</Text>
             )}
             {programs.map((prog) => (
