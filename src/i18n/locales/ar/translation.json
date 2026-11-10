@@ -706,5 +706,6 @@
   "paymentPageLoadError": "تعذّر تحميل صفحة الدفع. تحقّق من اتصالك وحاول مجدداً.",
   "paymentCancelled": "لم يكتمل الدفع. يمكنك المحاولة مجدداً من هذه الصفحة.",
   "languageNameEn": "English",
-  "languageNameAr": "العربية"
+  "languageNameAr": "العربية",
+  "viewMore": "عرض التفاصيل"
 }

@@ -706,5 +706,6 @@
   "paymentPageLoadError": "The payment page could not be loaded. Check your connection and try again.",
   "paymentCancelled": "Payment not completed. You can try again from this page.",
   "languageNameEn": "English",
-  "languageNameAr": "العربية"
+  "languageNameAr": "العربية",
+  "viewMore": "View details"
 }
