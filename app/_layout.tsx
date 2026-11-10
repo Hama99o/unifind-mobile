@@ -7,6 +7,9 @@ installCrashReporter();
 // and injects the compiled styles on native. Mirrors the working Hatiwal app.
 import "../src/styles/global.css";
 import "@/i18n";
+import { restoreAppLanguage } from "@/i18n/language";
+// Apply the saved language as early as possible (resolves while the splash shows).
+void restoreAppLanguage();
 // Import authService early so it registers its refresh fn in authStore + nodeApi
 import "@/services/authService";
 

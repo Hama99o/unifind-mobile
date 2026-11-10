@@ -294,8 +294,7 @@ jest.mock("@/api/nodeApi", () => {
 
 // ─── 5. i18n — synchronous stub ──────────────────────────────────────────────
 //
-// Strategy: mock @/i18n so I18nManager.forceRTL never fires in tests (it
-// triggers a native reload), and mock the two hooks so every component test
+// Strategy: mock @/i18n (no real i18next init in tests), and mock the two hooks so every component test
 // gets deterministic, English, LTR translations without spinning up react-i18next.
 //
 // The mock t() returns the key itself so tests can assert on translation keys
@@ -311,11 +310,11 @@ jest.mock("@/i18n", () => ({
     off: jest.fn(),
     use: jest.fn().mockReturnThis(),
     init: jest.fn(),
+    changeLanguage: jest.fn(async () => undefined),
   },
   RTL_LANGS: ["ar"],
   DEFAULT_LANG: "en",
   isRtlLang: (lng: string) => lng === "ar",
-  applyDirection: jest.fn(),
 }));
 
 jest.mock("@/hooks/useCustomTranslation", () => ({

@@ -1,6 +1,5 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { I18nManager } from "react-native";
 import en from "./locales/en/translation.json";
 import ar from "./locales/ar/translation.json";
 
@@ -26,14 +25,7 @@ if (!i18n.isInitialized) {
   });
 }
 
-/** Apply RTL layout for a language. Call on language change. */
-export function applyDirection(lng: string) {
-  const rtl = isRtlLang(lng);
-  if (I18nManager.isRTL !== rtl) {
-    I18nManager.allowRTL(rtl);
-    I18nManager.forceRTL(rtl);
-    // A reload is required for native to re-layout; handled by the caller.
-  }
-}
+// RTL: layout is mirrored by hand (useCustomTranslation().isRtl); native layout
+// stays LTR on purpose. Never call I18nManager.forceRTL — see src/i18n/language.ts.
 
 export default i18n;

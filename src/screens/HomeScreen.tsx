@@ -20,6 +20,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { setAppLanguage } from "@/i18n/language";
 
 import { FindBarSection } from "@/screens/home/FindBarSection";
 import { GuideSection } from "@/screens/home/GuideSection";
@@ -71,7 +72,7 @@ export default function HomeScreen() {
 
   const handleLanguageToggle = () => {
     const next = i18n.language === "ar" ? "en" : "ar";
-    i18n.changeLanguage(next);
+    void setAppLanguage(next);
   };
 
   const handleProfilePress = () => {
