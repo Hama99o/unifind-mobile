@@ -44,13 +44,9 @@ import { OfferingReviewsSection } from "@/screens/offering/OfferingReviewsSectio
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useAuthStore } from "@/stores/authStore";
 import { useSelection } from "@/hooks/useSelection";
-import { reviewsApi } from "@/api/reviewsApi";
-import { offeringDetailApi } from "@/api/offeringDetailApi";
-import { nodeOfferingApi } from "@/api/nodeOfferingApi";
+import { useOfferingDetail } from "@/hooks/queries/useOfferingDetail";
 import { showToast } from "@/stores/toastStore";
 
-import type { StrapiOfferingDetail } from "@/api/offeringDetailApi";
-import type { NodeOfferingDetail, NodeOfferingSpecialist } from "@/api/nodeOfferingApi";
 
 // ─── Averages zero-value ──────────────────────────────────────────────────────
 
@@ -72,76 +68,51 @@ export default function OfferingDetailScreen() {
   const { isLoggedIn, user } = useAuthStore();
   const { isFavorite, toggleFavorite, seedSelection } = useSelection();
 
-  // ── Data state ─────────────────────────────────────────────────────────────
-  const [strapiOffering, setStrapiOffering] = useState<StrapiOfferingDetail | null>(null);
-  const [nodeOffering, setNodeOffering] = useState<NodeOfferingDetail | null>(null);
-  const [specialists, setSpecialists] = useState<NodeOfferingSpecialist[]>([]);
-  const [averages, setAverages] = useState(ZERO_AVG);
-  const [loading, setLoading] = useState(true);
+  // ── Server state (React Query): cached, so a revisit renders at once ──────
+  const {
+    strapiOffering,
+    nodeOffering,
+    specialists,
+    averages: averagesData,
+    loading,
+    notFound,
+    refetchAll,
+  } = useOfferingDetail(slug, lang === "ar" ? "ar" : "en", user?.userID);
+  const averages = averagesData
+    ? {
+        averageGeneralRating: averagesData.averageGeneralRating,
+        averageHelpfulnessRating: averagesData.averageHelpfulnessRating,
+        averagespecialistRating: averagesData.averagespecialistRating,
+        averagerecommendRating: averagesData.averagerecommendRating,
+        totalReviews: averagesData.totalReviews,
+        star5: averagesData.star5,
+        star4: averagesData.star4,
+        star3: averagesData.star3,
+        star2: averagesData.star2,
+        star1: averagesData.star1,
+      }
+    : ZERO_AVG;
   const [refreshing, setRefreshing] = useState(false);
-  const [notFound, setNotFound] = useState(false);
 
   // ── Specialist section scroll ref ──────────────────────────────────────────
   const scrollViewRef = useRef<ScrollView>(null);
   const specialistSectionRef = useRef<View>(null);
   const specialistSectionY = useRef<number>(0);
 
-  // ── Load data ──────────────────────────────────────────────────────────────
-  const load = useCallback(async (silent = false) => {
-    if (!slug) return;
-    if (!silent) setLoading(true);
-
-    const [strapi, node] = await Promise.all([
-      offeringDetailApi.getBySlug(slug, lang === "ar" ? "ar" : "en"),
-      nodeOfferingApi.getBySlug(slug),
-    ]);
-
-    if (!strapi || !node) {
-      setNotFound(true);
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    setStrapiOffering(strapi);
-    setNodeOffering(node);
-
-    // Rating (by Strapi id — numeric)
-    const avg = await reviewsApi.getAllAverageRating("Offering", String(strapi.id));
-    setAverages({
-      averageGeneralRating: avg.averageGeneralRating,
-      averageHelpfulnessRating: avg.averageHelpfulnessRating,
-      averagespecialistRating: avg.averagespecialistRating,
-      averagerecommendRating: avg.averagerecommendRating,
-      totalReviews: avg.totalReviews,
-      star5: avg.star5,
-      star4: avg.star4,
-      star3: avg.star3,
-      star2: avg.star2,
-      star1: avg.star1,
-    });
-
-    // Specialists from first mode (for avatar stack in hero)
-    if (node.specialists && node.specialists.length > 0) {
-      setSpecialists(node.specialists);
-    }
-
-    // H1 fix: seed via canonical seedSelection (uses userID not raw sub)
-    await seedSelection(["Offering", "Specialist"]);
-
-    setLoading(false);
-    setRefreshing(false);
-  }, [slug, lang, isLoggedIn, seedSelection]);
-
+  // Seed favorite state for the signed-in user (not server-cached data).
   useEffect(() => {
-    load();
-  }, [load]);
+    if (strapiOffering) void seedSelection(["Offering", "Specialist"]);
+  }, [strapiOffering, isLoggedIn, seedSelection]);
 
   // ── Refresh control ────────────────────────────────────────────────────────
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    load(true);
-  }, [load]);
+    try {
+      await refetchAll();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchAll]);
 
   // ── Favorite toggle — H1 fix: use canonical toggleFavorite ────────────────
   const handleToggleFavorite = () => {

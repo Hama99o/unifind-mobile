@@ -15,7 +15,7 @@
  * RTL-safe. Gluestack only. No hardcoded hex.
  */
 
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { ScrollView, View, RefreshControl } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,8 +33,7 @@ import { InstitutionDetailSkeleton } from "@/screens/institution/InstitutionDeta
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useAuthStore } from "@/stores/authStore";
 import { useSelection } from "@/hooks/useSelection";
-import { reviewsApi } from "@/api/reviewsApi";
-import { institutionDetailApi, AcademicData, InstitutionDetailItem } from "@/api/institutionDetailApi";
+import { useInstitutionDetail } from "@/hooks/queries/useInstitutionDetail";
 import { showToast } from "@/stores/toastStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -75,61 +74,34 @@ export default function InstitutionDetailScreen() {
   const { isLoggedIn } = useAuthStore();
   const { isFavorite, isCompared, toggleFavorite, toggleCompare, seedSelection } = useSelection();
 
-  const [institution, setInstitution] = useState<InstitutionDetailItem | null>(null);
-  const [academicData, setAcademicData] = useState<AcademicData>({
-    Bachelors: [], Masters: [], PhD: [], Others: [],
-  });
-  const [averages, setAverages] = useState<AverageRatings>(ZERO_AVERAGES);
-  const [nbPrograms, setNbPrograms] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  // Server state (React Query): cached per slug+locale, so a revisit renders at once.
+  const {
+    institution,
+    academicData,
+    nbPrograms,
+    averages: averagesData,
+    loading,
+    notFound,
+    refetchAll,
+    refreshAverages,
+  } = useInstitutionDetail(slug, locale);
+  const averages: AverageRatings = averagesData ?? ZERO_AVERAGES;
   const [refreshing, setRefreshing] = useState(false);
 
   const reviewScrollRef = useRef<ScrollView>(null);
 
-  // ── Load all data ───────────────────────────────────────────────────────────
+  // Seed favorite/compare state for the signed-in user (not server-cached data).
+  useEffect(() => {
+    if (institution) void seedSelection(["Institution", "Program"]);
+  }, [institution, isLoggedIn, seedSelection]);
 
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (!slug) return;
-    if (!isRefresh) setLoading(true);
-
+  const onRefresh = async () => {
+    setRefreshing(true);
     try {
-      const [inst, academic, nbProgs] = await Promise.all([
-        institutionDetailApi.getInstitutionBySlug(slug, locale),
-        institutionDetailApi.getAcademicUnitsInfo(slug, locale),
-        institutionDetailApi.getInstitutionProgramCount(slug, locale),
-      ]);
-
-      if (!inst) {
-        setNotFound(true);
-        return;
-      }
-
-      setInstitution(inst);
-      setAcademicData(academic);
-      setNbPrograms(nbProgs);
-
-      // Load ratings
-      const ratings = await reviewsApi.getAllAverageRating("Institution", inst.documentId);
-      setAverages(ratings);
-
-      // H1 fix: seed via canonical seedSelection (uses userID not raw sub)
-      await seedSelection(["Institution", "Program"]);
-    } catch {
-      if (!isRefresh) setNotFound(true);
+      await refetchAll();
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, [slug, locale, isLoggedIn, seedSelection]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData(true);
   };
 
   // ── Actions — H1 fix: use canonical selection hook ─────────────────────────
@@ -151,8 +123,7 @@ export default function InstitutionDetailScreen() {
 
   const handleReviewSubmitted = async () => {
     if (!institution) return;
-    const ratings = await reviewsApi.getAllAverageRating("Institution", institution.documentId);
-    setAverages(ratings);
+    await refreshAverages();
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
