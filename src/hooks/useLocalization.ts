@@ -28,8 +28,25 @@ export function useLocalization() {
   const formatNumber = (value: number, opts?: Intl.NumberFormatOptions) =>
     new Intl.NumberFormat(locale, opts).format(value);
 
-  const formatCurrency = (value: number, currency: "USD" | "LBP" = "USD") =>
-    new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
+  // Arabic: RLM + localized digits + a plain symbol after the number. Intl's Arabic
+  // "US$" form splits into "$US" in RTL text, and Hermes ignores
+  // currencyDisplay:"narrowSymbol" (QA BUG-05). English keeps Intl's output.
+  const formatCurrency = (value: number, currency: "USD" | "LBP" = "USD") => {
+    if (locale === "ar") {
+      // Whole amounts without decimals so ranges fit their chips.
+      const decimals = currency === "LBP" || Number.isInteger(value) ? 0 : 2;
+      const amount = new Intl.NumberFormat("ar", {
+        numberingSystem: "arab", // explicit: CLDR/ICU versions disagree on the "ar" default
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(value);
+      // Leading RLM: the amount reads right-to-left even inside text with no other
+      // strong RTL character (e.g. a "300 $ – 400 $" price chip). Unicode isolates
+      // were tried first but make Android mis-measure text (chips got ellipsized).
+      return `\u200F${amount}\u00A0${currency === "USD" ? "$" : "ل.ل."}`;
+    }
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
+  };
 
   const formatPercent = (value: number) =>
     new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 }).format(value);

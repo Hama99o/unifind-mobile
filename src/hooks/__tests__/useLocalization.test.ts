@@ -148,3 +148,17 @@ describe("useLocalization", () => {
     });
   });
 });
+
+describe("useLocalization — Arabic currency (BUG-05)", () => {
+  it("Arabic: RLM + Arabic digits + plain $, no decimals on whole amounts, never 'US$'", () => {
+    const ct = require("@/hooks/useCustomTranslation");
+    const spy = jest
+      .spyOn(ct, "useCustomTranslation")
+      .mockReturnValue({ t: (k: string) => k, lang: "ar", isRtl: true, i18n: { language: "ar" } });
+    const { result } = renderHook(() => useLocalization());
+    expect(result.current.formatCurrency(45, "USD")).toBe("\u200F٤٥\u00A0$");
+    expect(result.current.formatCurrency(45.5, "USD")).toBe("\u200F٤٥٫٥٠\u00A0$");
+    expect(result.current.formatCurrency(45, "USD")).not.toContain("US$");
+    spy.mockRestore();
+  });
+});
