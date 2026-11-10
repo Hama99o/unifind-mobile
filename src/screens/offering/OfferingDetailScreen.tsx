@@ -25,7 +25,7 @@
  * RTL-safe. No hardcoded hex. Gluestack only.
  */
 
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, View, RefreshControl } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -46,8 +46,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { useSelection } from "@/hooks/useSelection";
 import { useOfferingDetail } from "@/hooks/queries/useOfferingDetail";
 import { StickyBookBar } from "@/screens/offering/StickyBookBar";
+import { useScrollToSection } from "@/hooks/useScrollToSection";
 import { showToast } from "@/stores/toastStore";
-
 
 // ─── Averages zero-value ──────────────────────────────────────────────────────
 
@@ -57,7 +57,11 @@ const ZERO_AVG = {
   averagespecialistRating: 0,
   averagerecommendRating: 0,
   totalReviews: 0,
-  star5: 0, star4: 0, star3: 0, star2: 0, star1: 0,
+  star5: 0,
+  star4: 0,
+  star3: 0,
+  star2: 0,
+  star1: 0,
 };
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -96,9 +100,13 @@ export default function OfferingDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // ── Specialist section scroll ref ──────────────────────────────────────────
-  const scrollViewRef = useRef<ScrollView>(null);
-  const specialistSectionRef = useRef<View>(null);
-  const specialistSectionY = useRef<number>(0);
+  // Book a Seat (hero + sticky bar) scrolls to the specialist picker.
+  const {
+    scrollRef: scrollViewRef,
+    onParentLayout: onSectionsLayout,
+    onSectionLayout: onSpecialistLayout,
+    scrollToSection: scrollToSpecialists,
+  } = useScrollToSection();
 
   // Seed favorite state for the signed-in user (not server-cached data).
   useEffect(() => {
@@ -120,13 +128,6 @@ export default function OfferingDetailScreen() {
     if (!strapiOffering) return;
     toggleFavorite("Offering", String(strapiOffering.id));
   };
-
-  // ── Scroll to specialist section ──────────────────────────────────────────
-  const scrollToSpecialists = useCallback(() => {
-    if (specialistSectionY.current > 0) {
-      scrollViewRef.current?.scrollTo({ y: specialistSectionY.current - 20, animated: true });
-    }
-  }, []);
 
   // ── Guards ─────────────────────────────────────────────────────────────────
   if (loading) {
@@ -151,7 +152,9 @@ export default function OfferingDetailScreen() {
   const currentlyFav = isFavorite("Offering", itemId);
 
   const locationValue =
-    strapiOffering.location?.city?.name ?? strapiOffering.location?.street ?? null;
+    strapiOffering.location?.city?.name ??
+    strapiOffering.location?.street ??
+    null;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
@@ -187,7 +190,7 @@ export default function OfferingDetailScreen() {
         />
 
         {/* 3. Overview */}
-        <View className="mt-4 gap-4">
+        <View className="mt-4 gap-4" onLayout={onSectionsLayout}>
           <OfferingOverviewSection offering={strapiOffering} />
 
           {/* 4. Core Learnings */}
@@ -197,12 +200,7 @@ export default function OfferingDetailScreen() {
           <OfferingRequirementsSection offering={strapiOffering} />
 
           {/* 6. Specialist + booking flow */}
-          <View
-            ref={specialistSectionRef}
-            onLayout={(e) => {
-              specialistSectionY.current = e.nativeEvent.layout.y;
-            }}
-          >
+          <View onLayout={onSpecialistLayout}>
             <OfferingSpecialistSection nodeOffering={nodeOffering} />
           </View>
 
@@ -217,15 +215,7 @@ export default function OfferingDetailScreen() {
       </ScrollView>
 
       {/* DESIGN-01: price + Book a Seat stay reachable while scrolling */}
-      <StickyBookBar
-        fromPrice={
-          (nodeOffering?.eventTypes ?? [])
-            .map((e) => e.effectivePrice)
-            .filter((p): p is number => typeof p === "number" && p > 0)
-            .sort((a, b) => a - b)[0] ?? null
-        }
-        onBook={scrollToSpecialists}
-      />
+      <StickyBookBar onBook={scrollToSpecialists} />
     </SafeAreaView>
   );
 }

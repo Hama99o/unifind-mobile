@@ -11,7 +11,6 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
-import { isolateBidi } from "@/utils/catalogFormat";
 
 interface StickyBookBarProps {
   /** Lowest price across the offering's session types; hidden when unknown/0. */
@@ -35,17 +34,19 @@ export function StickyBookBar({ fromPrice, onBook }: StickyBookBarProps) {
         <View className="flex-1">
           <Text className={`text-xs text-muted-foreground ${isRtl ? "text-right" : ""}`}>{t("from")}</Text>
           <Text className={`text-lg font-bold text-foreground ${isRtl ? "text-right" : ""}`}>
-            {isolateBidi(formatCurrency(fromPrice, "USD"))}
+            {formatCurrency(fromPrice, "USD")}
           </Text>
         </View>
       )}
-      <Button
-        label={t("bookSeat")}
-        onPress={onBook}
-        action="primary"
-        className={showPrice ? "px-8" : "flex-1"}
-        testID="sticky-book-seat"
-      />
+      <View className={showPrice ? undefined : "flex-1"}>
+        <Button
+          label={t("bookSeat")}
+          onPress={onBook}
+          action="primary"
+          className={showPrice ? "px-8" : "w-full"}
+          testID="sticky-book-seat"
+        />
+      </View>
     </View>
   );
 }
