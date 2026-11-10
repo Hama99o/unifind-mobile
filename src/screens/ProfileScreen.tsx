@@ -32,6 +32,7 @@ import { FavoritesTab } from "./profile/tabs/FavoritesTab";
 import { ComparisonsTab } from "./profile/tabs/ComparisonsTab";
 import { BookingsTab } from "./profile/tabs/BookingsTab";
 import { useUserInfo } from "@/hooks/queries/useProfile";
+import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 
 // ─── Logged-out view ──────────────────────────────────────────────────────────
 
@@ -132,6 +133,7 @@ export default function ProfileScreen() {
 
   return (
     <ScreenContainer>
+      <LanguageSwitch />
       {isLoggedIn ? <SignedInProfile /> : <SignedOutProfile />}
     </ScreenContainer>
   );

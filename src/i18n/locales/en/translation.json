@@ -704,5 +704,7 @@
   "aboutUsWhyUsCardDescription3": "Equips students with practical tools and expert with labor market needs.",
   "aboutUsWhyUsCardDescription4": "Lebanon’s only free centralized platform for all majors and universities.",
   "paymentPageLoadError": "The payment page could not be loaded. Check your connection and try again.",
-  "paymentCancelled": "Payment not completed. You can try again from this page."
+  "paymentCancelled": "Payment not completed. You can try again from this page.",
+  "languageNameEn": "English",
+  "languageNameAr": "العربية"
 }

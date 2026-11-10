@@ -704,5 +704,7 @@
   "aboutUsWhyUsCardDescription3": "يُزوّد الطلاب بالأدوات العملية والخبرات المتوافقة مع احتياجات سوق العمل.",
   "aboutUsWhyUsCardDescription4": "المنصّة المركزية الوحيدة المجانية في لبنان لجميع التخصصات والجامعات.",
   "paymentPageLoadError": "تعذّر تحميل صفحة الدفع. تحقّق من اتصالك وحاول مجدداً.",
-  "paymentCancelled": "لم يكتمل الدفع. يمكنك المحاولة مجدداً من هذه الصفحة."
+  "paymentCancelled": "لم يكتمل الدفع. يمكنك المحاولة مجدداً من هذه الصفحة.",
+  "languageNameEn": "English",
+  "languageNameAr": "العربية"
 }
