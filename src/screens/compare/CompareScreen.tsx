@@ -2,7 +2,9 @@
  * CompareScreen — Standalone full-screen compare view.
  * Web parity: /[locale]/compare
  *
- * Auth-gated: logged out → shows SignInSheet overlay (not a hard redirect).
+ * Auth-gated: logged out → inline "Sign-In Required" placeholder whose Sign In
+ * button opens the global SignInSheet. (No auto-open on mount: the sheet would
+ * cover the page and, being global, follow the user to the next screen.)
  * Reuses ComparisonsTab (which in turn uses ProgramsCompareTab +
  * InstitutionsCompareTab + ComparisonTable) — no table logic is duplicated.
  *
@@ -11,7 +13,6 @@
 
 import { useAuthStore } from "@/stores/authStore";
 import { useSignInSheet } from "@/auth/useSignInSheet";
-import { useEffect } from "react";
 import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -53,21 +54,11 @@ function SignedOutPlaceholder() {
 export default function CompareScreen() {
   const { t } = useCustomTranslation();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const { open } = useSignInSheet();
 
   // Route param for initial tab
   const params = useLocalSearchParams<{ tab?: string }>();
   const initialTab: "programs" | "institutions" =
     params.tab?.toLowerCase() === "institutions" ? "institutions" : "programs";
-
-  // If user navigates here logged-out, open the sheet once
-  useEffect(() => {
-    if (!isLoggedIn) {
-      open();
-    }
-    // Only fire once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <ScreenContainer>

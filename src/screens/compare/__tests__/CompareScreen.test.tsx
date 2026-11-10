@@ -2,7 +2,7 @@
  * CompareScreen — standalone compare view (auth-gated).
  *
  * Logged out → SignedOutPlaceholder (signInRequired + signIn CTA) and the
- * sign-in sheet opens once on mount.
+ * Sign In button on the placeholder opens the sign-in sheet.
  * Logged in → CompareTabs (Programs | Institutions sub-tabs). Each sub-tab loads
  * compare IDs from comparesApi.getCompareIds, which is transport over the global
  * nodeApi.get mock. The default mock resolves { data: {} }, so getCompareIds sees
@@ -85,15 +85,17 @@ describe("CompareScreen", () => {
     (http.get as jest.Mock).mockResolvedValue({ data: { data: [] } });
   });
 
-  it("renders the signed-out placeholder and opens the sign-in sheet when logged out", async () => {
+  it("renders the signed-out placeholder; its Sign In button opens the sheet (no auto-open)", async () => {
     logout();
     renderWithProviders(<CompareScreen />);
     expect(await screen.findByText("signInRequired")).toBeTruthy();
     expect(screen.getByText("compareSignInDescription")).toBeTruthy();
     // signIn CTA button.
     expect(screen.getByText("signIn")).toBeTruthy();
-    // Mount effect opens the global sheet.
-    await waitFor(() => expect(useSignInSheetStore.getState().isOpen).toBe(true));
+    // No auto-open on mount (BUG-04: a global sheet must not cover the page).
+    expect(useSignInSheetStore.getState().isOpen).toBe(false);
+    fireEvent.press(screen.getByText("signIn"));
+    expect(useSignInSheetStore.getState().isOpen).toBe(true);
   });
 
   it("renders the compare tabs with the empty program-comparisons state when logged in", async () => {
