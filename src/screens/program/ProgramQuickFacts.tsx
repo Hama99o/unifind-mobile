@@ -26,7 +26,6 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
 import { useColors } from "@/hooks/useColors";
 import type { ProgramListItem } from "@/api/programsApiTypes";
-import { isolateBidi } from "@/utils/catalogFormat";
 
 interface Props {
   program: ProgramListItem;
@@ -95,7 +94,7 @@ export function ProgramQuickFacts({ program }: Props) {
         feesValue =
           minTuition === maxTuition
             ? formatCurrency(maxTuition)
-            : `${isolateBidi(formatCurrency(minTuition))}–${isolateBidi(formatCurrency(maxTuition))}`;
+            : `${formatCurrency(minTuition)}–${formatCurrency(maxTuition)}`;
       } else if (minTuition != null) {
         feesValue = formatCurrency(minTuition);
       } else if (maxTuition != null) {

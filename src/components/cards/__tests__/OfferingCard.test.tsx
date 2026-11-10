@@ -69,7 +69,7 @@ describe("OfferingCard", () => {
   it("renders the price label as 'from $X.00' when price > 0", () => {
     render(<OfferingCard {...baseProps} price={1500} />);
     // mocked formatCurrency(1500,"USD") => "$1500.00"; label => "from $1500.00"
-    expect(screen.getByText("from \u2068$1500.00\u2069")).toBeTruthy(); // bidi-isolated amount (BUG-05)
+    expect(screen.getByText("from $1500.00")).toBeTruthy();
   });
 
   it("hides the price label when price is 0", () => {

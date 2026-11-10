@@ -12,7 +12,6 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useLocalization } from "@/hooks/useLocalization";
 import { router } from "expo-router";
 import type { ProgramListItem } from "@/api/programsApi";
-import { isolateBidi } from "@/utils/catalogFormat";
 
 interface ProgramCardRendererProps {
   isFavorite: (documentId: string) => boolean;
@@ -79,9 +78,9 @@ export function useProgramCardRenderer({
         if (tuition0.minTuition === 0 && tuition0.maxTuition === 0) {
           fees = "-";
         } else if (tuition0.minTuition === tuition0.maxTuition) {
-          fees = isolateBidi(formatCurrency(tuition0.minTuition));
+          fees = formatCurrency(tuition0.minTuition);
         } else {
-          fees = `${isolateBidi(formatCurrency(tuition0.minTuition))}–${isolateBidi(formatCurrency(tuition0.maxTuition))}`;
+          fees = `${formatCurrency(tuition0.minTuition)}–${formatCurrency(tuition0.maxTuition)}`;
         }
       }
 

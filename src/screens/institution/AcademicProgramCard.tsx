@@ -19,7 +19,6 @@ import { showToast } from "@/stores/toastStore";
 import { useSignInSheet } from "@/auth/useSignInSheet";
 import { router } from "expo-router";
 import type { ProgramForFaculty } from "@/api/institutionDetailApi";
-import { isolateBidi } from "@/utils/catalogFormat";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,7 +67,7 @@ export function AcademicProgramCard({
     if (min === 0 && max === 0) return "-";
     return min === max
       ? formatCurrency(min)
-      : `${isolateBidi(formatCurrency(min))}–${isolateBidi(formatCurrency(max))}`;
+      : `${formatCurrency(min)}–${formatCurrency(max)}`;
   })();
 
   const handlePress = () => {

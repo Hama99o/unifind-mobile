@@ -40,53 +40,43 @@ const formatNumber = (v: number) => String(v);
 
 // ─── formatTuitionRange ───────────────────────────────────────────────────────
 
-/** Remove the invisible bidi isolates so expectations read naturally. */
-const stripBidi = (s: string) => s.replace(/[\u2068\u2069]/g, "");
-
 describe("formatTuitionRange", () => {
-  it("isolates each amount for RTL (QA BUG-05)", () => {
-    expect(formatTuitionRange({ minTuition: 220, maxTuition: 300 }, formatCurrency)).toBe(
-      "\u2068$220\u2069–\u2068$300\u2069"
-    );
-  });
-
-
   it("returns a range when min < max", () => {
-    expect(stripBidi(formatTuitionRange({ minTuition: 5000, maxTuition: 10000 }, formatCurrency))).toBe(
+    expect(formatTuitionRange({ minTuition: 5000, maxTuition: 10000 }, formatCurrency)).toBe(
       "$5,000–$10,000"
     );
   });
 
   it("returns a single value when min === max", () => {
-    expect(stripBidi(formatTuitionRange({ minTuition: 7500, maxTuition: 7500 }, formatCurrency))).toBe(
+    expect(formatTuitionRange({ minTuition: 7500, maxTuition: 7500 }, formatCurrency)).toBe(
       "$7,500"
     );
   });
 
   it("returns minTuition when maxTuition is null", () => {
-    expect(stripBidi(formatTuitionRange({ minTuition: 3000, maxTuition: null }, formatCurrency))).toBe(
+    expect(formatTuitionRange({ minTuition: 3000, maxTuition: null }, formatCurrency)).toBe(
       "$3,000"
     );
   });
 
   it("returns maxTuition when minTuition is null", () => {
-    expect(stripBidi(formatTuitionRange({ minTuition: null, maxTuition: 8000 }, formatCurrency))).toBe(
+    expect(formatTuitionRange({ minTuition: null, maxTuition: 8000 }, formatCurrency)).toBe(
       "$8,000"
     );
   });
 
   it("returns '' when both are null (missing data)", () => {
-    expect(stripBidi(formatTuitionRange({ minTuition: null, maxTuition: null }, formatCurrency))).toBe("");
+    expect(formatTuitionRange({ minTuition: null, maxTuition: null }, formatCurrency)).toBe("");
   });
 
   it("zero-guard: returns '' when both are 0 (no fake '$0–$0')", () => {
-    expect(stripBidi(formatTuitionRange({ minTuition: 0, maxTuition: 0 }, formatCurrency))).toBe("");
+    expect(formatTuitionRange({ minTuition: 0, maxTuition: 0 }, formatCurrency)).toBe("");
   });
 
   it("returns formatted value when only minTuition is 0", () => {
     // One side is 0 but the other is meaningful — still show it
     const result = formatTuitionRange({ minTuition: 0, maxTuition: 5000 }, formatCurrency);
-    expect(stripBidi(result)).toBe("$0–$5,000");
+    expect(result).toBe("$0–$5,000");
   });
 });
 
@@ -99,11 +89,11 @@ describe("formatInstitutionTuition", () => {
       { minTuition: 1000, maxTuition: 8000 },
       { minTuition: 4000, maxTuition: 7000 },
     ];
-    expect(stripBidi(formatInstitutionTuition(tuitions, formatCurrency))).toBe("$1,000–$8,000");
+    expect(formatInstitutionTuition(tuitions, formatCurrency)).toBe("$1,000–$8,000");
   });
 
   it("returns '' for empty array", () => {
-    expect(stripBidi(formatInstitutionTuition([], formatCurrency))).toBe("");
+    expect(formatInstitutionTuition([], formatCurrency)).toBe("");
   });
 
   it("zero-guard: returns '' when all entries are 0/0", () => {
@@ -111,11 +101,11 @@ describe("formatInstitutionTuition", () => {
       { minTuition: 0, maxTuition: 0 },
       { minTuition: 0, maxTuition: 0 },
     ];
-    expect(stripBidi(formatInstitutionTuition(tuitions, formatCurrency))).toBe("");
+    expect(formatInstitutionTuition(tuitions, formatCurrency)).toBe("");
   });
 
   it("returns single value when only one entry with equal min/max", () => {
-    expect(stripBidi(formatInstitutionTuition([{ minTuition: 5000, maxTuition: 5000 }], formatCurrency))).toBe(
+    expect(formatInstitutionTuition([{ minTuition: 5000, maxTuition: 5000 }], formatCurrency)).toBe(
       "$5,000"
     );
   });
@@ -125,7 +115,7 @@ describe("formatInstitutionTuition", () => {
     const result = formatInstitutionTuition(tuitions, formatCurrency);
     // No maxTuition anywhere → globalMax falls back to the first min (mins[0]),
     // so globalMin === globalMax and the range collapses to a single value.
-    expect(stripBidi(result)).toBe("$2,000");
+    expect(result).toBe("$2,000");
   });
 });
 
