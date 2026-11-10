@@ -32,38 +32,45 @@ tags:
 - waitForAnimationToEnd:
     timeout: 4000
 
-# Profile Information tab (default) is visible when logged in
-- assertVisible:
-    id: profile-tab-profile
+# Requires a signed-in session (sign in once in the native APK first).
+# Signed out, the inline gate shows instead and the tab steps are skipped.
+- runFlow:
+    when:
+      notVisible:
+        id: profile-gate-signin
+    commands:
+      # Profile Information tab (default) is visible when logged in
+      - assertVisible:
+          id: profile-tab-profile
 
-# The tab bar scrolls horizontally — switch across the tabs that exist.
-- tapOn:
-    id: profile-tab-bookings
-    optional: true
-- waitForAnimationToEnd
-- tapOn:
-    id: profile-tab-favorites
-    optional: true
-- waitForAnimationToEnd
-- tapOn:
-    id: profile-tab-comparisons
-    optional: true
-- waitForAnimationToEnd
-- tapOn:
-    id: profile-tab-activity
-    optional: true
-- waitForAnimationToEnd
-- tapOn:
-    id: profile-tab-credentials
-    optional: true
-- waitForAnimationToEnd
-- tapOn:
-    id: profile-tab-about
-    optional: true
-- waitForAnimationToEnd
+      # The tab bar scrolls horizontally — switch across the tabs that exist.
+      - tapOn:
+          id: profile-tab-bookings
+          optional: true
+      - waitForAnimationToEnd
+      - tapOn:
+          id: profile-tab-favorites
+          optional: true
+      - waitForAnimationToEnd
+      - tapOn:
+          id: profile-tab-comparisons
+          optional: true
+      - waitForAnimationToEnd
+      - tapOn:
+          id: profile-tab-activity
+          optional: true
+      - waitForAnimationToEnd
+      - tapOn:
+          id: profile-tab-credentials
+          optional: true
+      - waitForAnimationToEnd
+      - tapOn:
+          id: profile-tab-about
+          optional: true
+      - waitForAnimationToEnd
 
-# Return to the Profile Information tab
-- tapOn:
-    id: profile-tab-profile
-    optional: true
-- waitForAnimationToEnd
+      # Return to the Profile Information tab
+      - tapOn:
+          id: profile-tab-profile
+          optional: true
+      - waitForAnimationToEnd

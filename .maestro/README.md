@@ -75,6 +75,15 @@ eas build --profile preview --platform android
 maestro test .maestro/flows/
 ```
 
+## Notes (QA 2026-11-10)
+
+- Bottom-tab IDs use `tabBarButtonTestID` (React Navigation 7). The old v6
+  `tabBarTestID` option rendered nothing, so every flow failed at `tab-home`.
+- Expo Go: use `appId: host.exp.exponent`, start with `openLink: exp://<host>:<port>/--/home`
+  instead of `launchApp`, and note that `unifind://` deep links (flow 13) only work in
+  a native build (EAS/dev-client APK), not in Expo Go. Login also only works in a
+  native build (the Expo Go `exp://` redirect is not an allowed Auth0 callback).
+
 ## testID reference
 
 All stable testIDs used by Maestro flows:
@@ -114,6 +123,13 @@ All stable testIDs used by Maestro flows:
 | `compare-bar-clear` | CompareBar clear (X) button |
 | `specialist-book-session` | "Book Now" / "Selected" in SpecialistCard |
 | `checkout-pay-now` | "Pay Now" button in OfferingCheckoutScreen |
+| `checkout-sign-in` | Sign In action on the signed-out checkout state |
+| `payments-unavailable` | Coming-soon notice shown instead of Book/Pay while `EXPO_PUBLIC_PAYMENTS_ENABLED` is off |
+| `offering-book-session` | "Book a Session" button (only when payments are enabled) |
+| `profile-gate-signin` | Sign In button on the logged-out Profile gate |
+| `profile-gate-create-account` | Create Account button on the logged-out Profile gate |
+| `about-us-screen` | About Us (Our Story) screen scroll view |
+| `hero-logo` | Logo box in HeroDetailCard (absent when there is no logo) |
 
 ## Adding new flows
 

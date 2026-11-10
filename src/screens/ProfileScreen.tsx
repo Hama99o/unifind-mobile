@@ -58,12 +58,13 @@ function SignedOutProfile() {
       </Text>
 
       <VStack className="gap-3 w-full">
-        <Button label={t("signIn")} action="primary" onPress={open} />
+        <Button label={t("signIn")} action="primary" onPress={open} testID="profile-gate-signin" />
         <Button
           label={t("createAccount")}
           action="primary"
           variant="outline"
           onPress={open}
+          testID="profile-gate-create-account"
         />
       </VStack>
     </View>

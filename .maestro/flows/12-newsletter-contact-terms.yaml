@@ -30,12 +30,13 @@ tags:
     id: home-screen
 
 # Scroll the home page down to the footer
+# The home page is long: scroll to the last footer item (Subscribe is then on screen).
 - scrollUntilVisible:
     element:
-      text: "Subscribe"
+      text: "Terms & Conditions"
     direction: DOWN
-    timeout: 20000
-    optional: true
+    timeout: 90000
+    speed: 30
 
 # Newsletter signup button (action="secondary", label "Subscribe")
 - assertVisible:
@@ -43,10 +44,14 @@ tags:
     optional: true
 
 # Newsletter email input — type an address (do NOT submit; avoids a live POST)
-- tapOn:
-    text: "Enter your email"
-    optional: true
-- inputText: "qa+e2e@unifind.online"
+- runFlow:
+    when:
+      visible:
+        text: "Enter your email"
+    commands:
+      - tapOn:
+          text: "Enter your email"
+      - inputText: "qa+e2e@unifind.online"
 - waitForAnimationToEnd
 
 # Contact link

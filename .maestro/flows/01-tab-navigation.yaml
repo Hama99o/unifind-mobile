@@ -32,8 +32,21 @@ tags:
 - tapOn:
     id: tab-profile
 - waitForAnimationToEnd
-- assertVisible:
-    id: profile-tab-profile
+# Signed in → profile tab bar; signed out → the inline sign-in gate.
+- runFlow:
+    when:
+      visible:
+        id: profile-gate-signin
+    commands:
+      - assertVisible:
+          id: profile-gate-signin
+- runFlow:
+    when:
+      notVisible:
+        id: profile-gate-signin
+    commands:
+      - assertVisible:
+          id: profile-tab-profile
 
 # Return to Home
 - tapOn:

@@ -6,8 +6,8 @@
 #   - "Create Account" button is present.
 #
 # Note: this flow assumes the user is NOT logged in (fresh install / cleared state).
-# testIDs: tab-profile, profile-tab-profile, signin-sheet-signin,
-#          signin-sheet-create-account
+# testIDs: tab-profile, profile-gate-signin, profile-gate-create-account,
+#          signin-sheet-signin, signin-sheet-create-account
 
 appId: org.unifind.app
 tags:
@@ -25,9 +25,18 @@ tags:
 - waitForAnimationToEnd:
     timeout: 3000
 
-# Either profile tab bar is visible (logged in) OR sign-in sheet is visible
-# (logged out). Assert the sign-in sheet buttons are visible.
+# Logged out: Profile shows an inline "Sign-In Required" gate. Its Sign In
+# button opens the global SignInSheet (Sign In + Create Account).
+- assertVisible:
+    id: profile-gate-signin
+- assertVisible:
+    id: profile-gate-create-account
+- tapOn:
+    id: profile-gate-signin
+- waitForAnimationToEnd
 - assertVisible:
     id: signin-sheet-signin
 - assertVisible:
     id: signin-sheet-create-account
+# Dismiss without signing in
+- back
