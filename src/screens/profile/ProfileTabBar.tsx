@@ -1,10 +1,10 @@
 /**
- * ProfileTabBar — horizontal scrollable tab bar for all 7 profile tabs + sign-out.
+ * ProfileTabBar — horizontal scrollable tab bar for all 7 profile tabs.
  *
  * Tabs: Profile Information | Account Credentials | About Me |
  *       Activity | Favorites | Comparisons | Bookings
  *
- * Sign-out is in its OWN mt-3 mx-4 bg-card rounded-2xl container OUTSIDE the scroll card.
+ * Sign-out lives in the compact ProfileHeader (QA 2026-11-10 DESIGN-05).
  * Active chip bg-lightgreen (token via brand). Tab Pressables wrapped in usePressScale.
  * paddingVertical 10→12 for ≥44px touch floor.
  * RTL-safe, theme tokens only.
@@ -16,15 +16,13 @@ import { scrollXToReveal } from "@/utils/scrollIntoView";
 import Animated from "react-native-reanimated";
 import {
   User, Shield, BookOpen, Activity,
-  Heart, ArrowLeftRight, Clock, LogOut,
+  Heart, ArrowLeftRight, Clock,
 } from "lucide-react-native";
 import { Text } from "@/components/ui/text";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { usePressScale } from "@/hooks/usePressScale";
 import { brand } from "@/config/theme";
-import { confirmAlert } from "@/components/ui/alert-dialog";
-import { authService } from "@/services/authService";
 
 export type ProfileTab =
   | "profile"
@@ -54,37 +52,6 @@ const TABS: Tab[] = [
 interface ProfileTabBarProps {
   activeTab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
-}
-
-// ─── Sign-out row with press scale ───────────────────────────────────────────
-
-function SignOutRow({ onPress, isRtl }: { onPress: () => void; isRtl: boolean }) {
-  const colors = useColors();
-  const { t } = useCustomTranslation();
-  const { animStyle, handlePressIn, handlePressOut } = usePressScale();
-
-  return (
-    <Animated.View style={animStyle}>
-      <Pressable
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={{
-          flexDirection: isRtl ? "row-reverse" : "row",
-          alignItems: "center",
-          gap: 10,
-          paddingHorizontal: 18,
-          paddingVertical: 14,
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={t("signOut")}
-        testID="profile-sign-out"
-      >
-        <LogOut size={18} color={colors.destructive} />
-        <Text className="text-destructive font-semibold text-sm">{t("signOut")}</Text>
-      </Pressable>
-    </Animated.View>
-  );
 }
 
 // ─── Single tab pill with press scale ────────────────────────────────────────
@@ -168,19 +135,6 @@ export function ProfileTabBar({ activeTab, onTabChange }: ProfileTabBarProps) {
   };
   useEffect(() => reveal(true), [activeTab, isRtl]);
 
-  const handleSignOut = () => {
-    confirmAlert(t("signOut"), t("signOutConfirmation"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("signOut"),
-        style: "destructive",
-        onPress: () => {
-          authService.logout().catch(() => {});
-        },
-      },
-    ]);
-  };
-
   return (
     <>
       {/* Tab scroll card */}
@@ -227,10 +181,6 @@ export function ProfileTabBar({ activeTab, onTabChange }: ProfileTabBarProps) {
         </ScrollView>
       </View>
 
-      {/* Sign-out — own card OUTSIDE the scroll card */}
-      <View className="mt-3 mx-4 bg-card rounded-2xl overflow-hidden">
-        <SignOutRow onPress={handleSignOut} isRtl={isRtl} />
-      </View>
     </>
   );
 }

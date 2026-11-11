@@ -64,17 +64,8 @@ describe("ProfileTabBar", () => {
     expect(onTabChange).toHaveBeenCalledWith("favorites");
   });
 
-  it("sign-out (after confirm) calls authService.logout", () => {
-    const logoutSpy = jest.spyOn(authService, "logout").mockResolvedValue(undefined);
-    // Auto-confirm: fire the destructive (sign-out) action.
-    _registerAlertDialogShow(({ actions }: { actions?: AlertAction[] }) => {
-      actions?.find((a) => a.style === "destructive")?.onPress?.();
-    });
-
+  it("no longer holds sign-out (moved into the compact header, DESIGN-05)", () => {
     render(<ProfileTabBar activeTab="profile" onTabChange={jest.fn()} />);
-    fireEvent.press(screen.getByTestId("profile-sign-out"));
-
-    expect(logoutSpy).toHaveBeenCalledTimes(1);
-    logoutSpy.mockRestore();
+    expect(screen.queryByTestId("profile-sign-out")).toBeNull();
   });
 });
