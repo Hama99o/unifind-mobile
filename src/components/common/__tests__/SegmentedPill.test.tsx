@@ -37,20 +37,20 @@ describe("SegmentedPill", () => {
   });
 
   it("renders a leading icon when provided and passes size 15", () => {
-    const Icon = jest.fn(() => null);
+    const Icon = jest.fn((_props: { size: number; color: string }) => null);
     render(
       <SegmentedPill label="With Icon" active onPress={jest.fn()} icon={Icon} />
     );
     // Icon is rendered as a component — assert it received size 15.
     expect(Icon).toHaveBeenCalled();
-    const props = Icon.mock.calls[0][0] as { size: number; color: string };
+    const props = Icon.mock.calls[0][0];
     expect(props.size).toBe(15);
     // active -> icon color is brand.prussian (a defined hex), not undefined.
     expect(typeof props.color).toBe("string");
   });
 
   it("renders label-only when no icon is given (icon component not invoked)", () => {
-    const Icon = jest.fn(() => null);
+    const Icon = jest.fn((_props: { size: number; color: string }) => null);
     render(<SegmentedPill label="No Icon" active={false} onPress={jest.fn()} />);
     expect(Icon).not.toHaveBeenCalled();
     expect(screen.getByText("No Icon")).toBeTruthy();

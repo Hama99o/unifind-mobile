@@ -37,7 +37,7 @@ const PROPS = {
  * Button composite, then its inner submit Pressable). See the file header. */
 function getPressableNodes() {
   return screen.root.findAll(
-    (node) => typeof (node.props as { onPress?: unknown })?.onPress === "function"
+    (node: { props: unknown }) => typeof (node.props as { onPress?: unknown })?.onPress === "function"
   );
 }
 

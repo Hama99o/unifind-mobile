@@ -102,7 +102,7 @@ describe("ProgramsCompareTab", () => {
     // one ComparisonTable imports, so UNSAFE_getAllByType(Pressable) matches none;
     // querying the composite tree by the onPress prop is reference-independent.)
     const pressables = screen.UNSAFE_root.findAll(
-      (node) => typeof node.props?.onPress === "function"
+      (node: { props: { onPress?: unknown } }) => typeof node.props?.onPress === "function"
     );
     fireEvent.press(pressables[0]);
 

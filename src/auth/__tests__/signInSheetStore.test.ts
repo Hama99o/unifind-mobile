@@ -37,7 +37,7 @@ describe("signInSheetStore — initial state", () => {
 
   it("does NOT expose any pending-action storage", () => {
     // The gate does not queue actions; the store has no such field.
-    const state = useSignInSheetStore.getState() as Record<string, unknown>;
+    const state = useSignInSheetStore.getState() as unknown as Record<string, unknown>;
     expect(state.pendingAction).toBeUndefined();
     expect(state.pending).toBeUndefined();
     expect(Object.keys(state).sort()).toEqual(["close", "isOpen", "open"]);
