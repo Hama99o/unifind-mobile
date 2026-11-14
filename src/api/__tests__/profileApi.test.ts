@@ -191,3 +191,15 @@ describe("profileApi.updatePhoto", () => {
     expect(await profileApi.updatePhoto("p")).toBeUndefined();
   });
 });
+
+describe("profileApi.deleteAccount", () => {
+  it("DELETEs /users/me", async () => {
+    await profileApi.deleteAccount();
+    expect((nodeApi.delete as jest.Mock).mock.calls[0][0]).toBe("/users/me");
+  });
+
+  it("propagates a rejection", async () => {
+    (nodeApi.delete as jest.Mock).mockRejectedValueOnce(new Error("500"));
+    await expect(profileApi.deleteAccount()).rejects.toThrow("500");
+  });
+});

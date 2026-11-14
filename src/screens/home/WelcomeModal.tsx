@@ -37,6 +37,7 @@ import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { brand, SHADOW_COLOR } from "@/config/theme";
 import { Logo } from "@/components/shared/Logo";
+import { PAYMENTS_ENABLED } from "@/config/payments";
 
 const SEEN_KEY = "revamp_2026_seen_v3";
 
@@ -45,12 +46,23 @@ interface BulletItem {
   textKey: string;
 }
 
+const WHISH_KEY = "welcome_popup.whish_integration";
+
 const BULLETS: BulletItem[] = [
   { Icon: Globe,       textKey: "welcome_popup.arabic_support" },
-  { Icon: Wallet,      textKey: "welcome_popup.whish_integration" },
+  { Icon: Wallet,      textKey: WHISH_KEY },
   { Icon: Layers,      textKey: "welcome_popup.redesigned_interface" },
   { Icon: TrendingUp,  textKey: "welcome_popup.growth_center" },
 ];
+
+/**
+ * The bullets to show. The Whish bullet shows only when payments are on:
+ * store review must not see a payment method that the app does not offer
+ * (issue #10).
+ */
+export function welcomeBullets(paymentsEnabled: boolean = PAYMENTS_ENABLED): BulletItem[] {
+  return paymentsEnabled ? BULLETS : BULLETS.filter((b) => b.textKey !== WHISH_KEY);
+}
 
 export function WelcomeModal() {
   const { t, isRtl } = useCustomTranslation();
@@ -130,7 +142,7 @@ export function WelcomeModal() {
 
           {/* ── Bullets ───────────────────────────────────────────────────── */}
           <View className="bg-card px-5 pt-5 pb-4 gap-3.5">
-            {BULLETS.map(({ Icon, textKey }) => (
+            {welcomeBullets().map(({ Icon, textKey }) => (
               <View
                 key={textKey}
                 className={`flex-row items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}
