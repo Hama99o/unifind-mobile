@@ -49,7 +49,8 @@
         "ascApiKeyId": "$ASC_API_KEY_ID",
         "sku": "CDS-UNIFIND",
         "language": "en-US",
-        "metadataPath": "./store.config.js"
+        "metadataPath": "./store.config.js",
+        "ascAppId": "6834776345"
       },
       "android": {
         "serviceAccountKeyPath": "$GOOGLE_PLAY_KEY_PATH",
