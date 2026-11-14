@@ -19,6 +19,7 @@ The **unifind mobile app**: a React Native (Expo) port of the `unifind` web prod
 | [`docs/SPRINT_BOARD.md`](docs/SPRINT_BOARD.md) | The live task board the software-house executes |
 | [`docs/FLOWAPP.md`](docs/FLOWAPP.md) | FlowApp Kanban mirror (project 6) — visible flow tracking; agents move cards as they work |
 | [`docs/BUILD_APK.md`](docs/BUILD_APK.md) | **Building the Android APK with Expo/EAS** — cloud builds, `eas.json` profiles, staging env vars, Auth0 callback caveat |
+| [`docs/release.md`](docs/release.md) | **Store release runbook**: TestFlight and the Play internal track, `store.config.js`, store graphics, env vars, blockers before public review |
 
 ## Non-negotiable golden rules (full detail in `docs/prompts/mobile.prompt.md`)
 
