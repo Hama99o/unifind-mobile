@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.unifind.app",
+      "bundleIdentifier": "online.unifind",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "org.unifind.app",
+      "package": "online.unifind",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#023055",
@@ -47,9 +47,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "05077f74-8f3c-48ff-b96a-05ffa039d153"
+        "projectId": "5d5e254a-d07a-4dc1-9afd-1d95dc573e93"
       }
     },
-    "owner": "hama990"
+    "owner": "candledigitals"
   }
 }
