@@ -25,10 +25,38 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "22.14.0"
+      "node": "22.14.0",
+      "env": {
+        "EXPO_PUBLIC_NODE_API_URL": "https://api-stg.unifind-lb.org/api",
+        "EXPO_PUBLIC_STRAPI_API_URL": "https://cms.unifind.online",
+        "EXPO_PUBLIC_AUTH_URL": "https://auth-stg.unifind-lb.org",
+        "EXPO_PUBLIC_AUTH0_DOMAIN": "dev-gim0725gfieuvjxt.us.auth0.com",
+        "EXPO_PUBLIC_AUTH0_CLIENT_ID": "lx7YKrGuk3trDoIhNESkkbxqseU7Nbpr",
+        "EXPO_PUBLIC_AUTH0_AUDIENCE": "https://dev-gim0725gfieuvjxt.us.auth0.com/api/v2/",
+        "EXPO_PUBLIC_APP_NAME": "UniFind",
+        "EXPO_PUBLIC_DEFAULT_LANG": "en",
+        "EXPO_PUBLIC_DEFAULT_THEME": "system",
+        "EXPO_PUBLIC_PAYMENTS_ENABLED": "false"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleTeamId": "39U48Z4U53",
+        "ascApiKeyPath": "$ASC_API_KEY_PATH",
+        "ascApiKeyIssuerId": "$ASC_API_KEY_ISSUER_ID",
+        "ascApiKeyId": "$ASC_API_KEY_ID",
+        "sku": "CDS-UNIFIND",
+        "language": "en-US",
+        "metadataPath": "./store.config.js",
+        "ascAppId": "6834776345"
+      },
+      "android": {
+        "serviceAccountKeyPath": "$GOOGLE_PLAY_KEY_PATH",
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }
