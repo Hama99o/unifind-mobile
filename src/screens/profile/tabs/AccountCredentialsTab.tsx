@@ -1,5 +1,5 @@
 /**
- * AccountCredentialsTab — email (read-only) + password reset.
+ * AccountCredentialsTab — email (read-only) + password reset + delete account.
  *
  * Reset password: POST to Auth0 change_password endpoint.
  * Success: bg-lightgreen rounded-xl with CircleCheck icon + text-foreground.
@@ -19,6 +19,7 @@ import { VStack } from "@/components/ui/box";
 import { useCustomTranslation } from "@/hooks/useCustomTranslation";
 import { useColors } from "@/hooks/useColors";
 import { useUserInfo } from "@/hooks/queries/useProfile";
+import { DeleteAccountSection } from "./DeleteAccountSection";
 
 const AUTH0_DOMAIN = process.env.EXPO_PUBLIC_AUTH0_DOMAIN as string;
 const AUTH0_CLIENT_ID = process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID as string;
@@ -171,6 +172,10 @@ export function AccountCredentialsTab() {
             disabled={resetting || !email}
           />
         )}
+      </View>
+
+      <View className="bg-card rounded-2xl p-4">
+        <DeleteAccountSection />
       </View>
     </KeyboardSafeScrollView>
   );

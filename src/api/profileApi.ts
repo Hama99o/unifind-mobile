@@ -144,4 +144,9 @@ export const profileApi = {
   async updatePhoto(publicId: string): Promise<void> {
     await nodeApi.post("/cloudinary/photo", { publicId });
   },
+
+  /** DELETE /users/me — delete the signed-in account (store rule: in-app deletion) */
+  async deleteAccount(): Promise<void> {
+    await nodeApi.delete("/users/me");
+  },
 };
